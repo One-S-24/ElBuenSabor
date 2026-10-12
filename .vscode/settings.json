@@ -1,0 +1,8 @@
+{
+  "deno.enable": true,
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Write all git commit messages in Spanish."
+    }
+  ]
+}
