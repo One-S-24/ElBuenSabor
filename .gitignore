@@ -1,0 +1,21 @@
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+
+# WebStorm / IntelliJ / PyCharm
+.idea/
+
+# --- Registros y temporales ---
+*.log
+*.tmp
+*.temp
