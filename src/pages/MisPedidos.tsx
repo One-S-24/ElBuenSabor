@@ -41,7 +41,7 @@ export default function MisPedidos() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
       </div>
     )
   }
@@ -50,11 +50,11 @@ export default function MisPedidos() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-stone-900">Mis pedidos</h2>
-          <p className="text-stone-500 text-sm">Historial de tus pedidos realizados</p>
+          <h2 className="text-leaf-900 font-serif">Mis pedidos</h2>
+          <p className="text-stone-600 text-sm">Historial de tus pedidos realizados</p>
         </div>
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-brand-600" />
+          <FileText className="w-4 h-4 text-leaf-600" />
           <span className="text-sm font-medium text-stone-600">{pedidos.length} pedido(s)</span>
         </div>
       </div>

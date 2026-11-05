@@ -84,7 +84,7 @@ export default function ClientDashboard() {
   ) : (
     <>
       <ShieldCheck className="w-4 h-4 mr-2" />
-      CONFIRMAR PEDIDO DIARIO
+      Confirmar pedido diario
     </>
   );
 
@@ -135,7 +135,7 @@ export default function ClientDashboard() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
       </div>
     )
   }
@@ -143,12 +143,12 @@ export default function ClientDashboard() {
   if (!menu) {
     return (
       <div className="p-6 text-center">
-        <Card className="max-w-sm mx-auto border-0 shadow-xl">
+        <Card className="max-w-sm mx-auto border-0 shadow-xl raised">
           <CardContent className="text-center py-10">
             <Clock className="w-12 h-12 mx-auto text-stone-300 mb-4" />
-            <CardTitle>No hay menú disponible hoy</CardTitle>
+            <CardTitle>Sin menú hoy</CardTitle>
             <CardDescription>
-              El menú del día aún no ha sido publicado. Vuelve más tarde.
+              El menú del día aún no se ha publicado. Vuelve más tarde.
             </CardDescription>
           </CardContent>
         </Card>
@@ -169,31 +169,29 @@ export default function ClientDashboard() {
       {/* Header de bienvenida */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Hola, {profile?.nombre ?? ''}</h1>
-          <p className="text-stone-500 text-sm">Lista para ordenar tu almuerzo.</p>
+          <h1 className="text-leaf-900 font-serif">Hola, {profile?.nombre ?? ''}</h1>
+          <p className="text-stone-600 text-sm">¿Qué vas a pedir hoy?</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={pedidoCerrado ? 'error' : 'success'}>
-            {pedidoCerrado ? 'Hora límite superada' : 'Pedido disponible'}
+            {pedidoCerrado ? 'Cerrado' : 'Disponible'}
           </Badge>
-          <ShieldCheck className={`w-4 h-4 ${pedidoCerrado ? 'text-rose-500' : 'text-emerald-500'}`} />
+          <ShieldCheck className={`w-4 h-4 ${pedidoCerrado ? 'text-rose-500' : 'text-leaf-500'}`} />
         </div>
       </div>
 
       {/* Saldo */}
-      <Card className="border-brand-100 bg-brand-50/40 hover:shadow-md transition-shadow">
+      <Card variant="bordered" className="border-leaf-200 bg-leaf-50/40">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
-                Saldo quincenal actual
-              </p>
-              <p className="text-xs text-stone-500">
+              <p className="text-[10px] font-semibold tracking-wider text-leaf-700 uppercase">Saldo quincenal actual</p>
+              <p className="text-[10px] text-stone-500">
                 {cuenta ? `${new Date(cuenta.fecha_inicio).toLocaleDateString('es-NI')} al ${new Date(cuenta.fecha_fin).toLocaleDateString('es-NI')}` : ''}
               </p>
             </div>
             <div className="text-right">
-              <span className="text-3xl font-bold text-brand-700">
+              <span className="text-3xl font-bold text-stone-900 font-serif">
                 {cuenta ? formatCurrency(cuenta.total_acumulado) : formatCurrency(0)}
               </span>
             </div>
@@ -202,10 +200,10 @@ export default function ClientDashboard() {
       </Card>
 
       {/* Menú del día */}
-      <Card>
+      <Card variant="raised">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-brand-700">Menú de hoy ({nombreDia})</CardTitle>
+            <CardTitle className="text-leaf-900">Menú de hoy ({nombreDia})</CardTitle>
             <p className="text-xs text-stone-500">Selecciona tus platillos y bebidas.</p>
           </div>
           <Badge variant={pedidoCerrado ? 'error' : 'brand'}>
@@ -227,9 +225,9 @@ export default function ClientDashboard() {
                     key={p.id}
                     onClick={() => setSelectedPrincipalId(p.id)}
                     className={cn(
-                      'flex flex-col items-center justify-between p-3 rounded-2xl border transition-all duration-200',
+                      'flex flex-col items-center justify-between p-3 rounded-lg border transition-all duration-200',
                       seleccionado
-                        ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-600 shadow-sm shadow-brand/20'
+                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf/20'
                         : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
                     )}
                   >
@@ -238,12 +236,12 @@ export default function ClientDashboard() {
                         type="radio"
                         checked={seleccionado}
                         onChange={() => setSelectedPrincipalId(p.id)}
-                        className="w-4 h-4 text-brand-600 accent-brand-600"
+                        className="w-4 h-4 text-leaf-600 accent-leaf-600"
                         readOnly
                       />
                       <span className="text-sm font-medium text-stone-800 leading-tight">{p.nombre}</span>
                     </div>
-                    <span className="text-brand-700 font-bold">
+                    <span className="text-leaf-700 font-bold">
                       {formatCurrency(p.precio_unitario)}
                     </span>
                   </button>
@@ -266,9 +264,9 @@ export default function ClientDashboard() {
                     key={p.id}
                     onClick={() => setSelectedBebidaId(p.id)}
                     className={cn(
-                      'flex flex-col items-center justify-between p-3 rounded-2xl border transition-all duration-200',
+                      'flex flex-col items-center justify-between p-3 rounded-lg border transition-all duration-200',
                       seleccionado
-                        ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-600 shadow-sm shadow-brand/20'
+                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf/20'
                         : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
                     )}
                   >
@@ -277,12 +275,12 @@ export default function ClientDashboard() {
                         type="radio"
                         checked={seleccionado}
                         onChange={() => setSelectedBebidaId(p.id)}
-                        className="w-4 h-4 text-brand-600 accent-brand-600"
+                        className="w-4 h-4 text-leaf-600 accent-leaf-600"
                         readOnly
                       />
                       <span className="text-sm font-medium text-stone-800 leading-tight">{p.nombre}</span>
                     </div>
-                    <span className="text-brand-700 font-bold">
+                    <span className="text-leaf-700 font-bold">
                       {formatCurrency(p.precio_unitario)}
                     </span>
                   </button>
@@ -309,14 +307,14 @@ export default function ClientDashboard() {
           </div>
 
           {pedidoCerrado && (
-            <div className="rounded-xl bg-rose-50 border border-rose-100 p-4">
+            <div className="rounded-lg bg-ember-50 border border-ember-200 p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-ember-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-rose-800">
+                  <p className="text-sm font-semibold text-ember-800">
                     Hora límite de corte superada
                   </p>
-                  <p className="text-xs text-rose-600 mt-1">
+                  <p className="text-xs text-ember-600 mt-1">
                     Los pedidos cierran a las 11:00 AM. No se pueden tomar más pedidos hoy.
                   </p>
                 </div>
@@ -327,20 +325,20 @@ export default function ClientDashboard() {
       </Card>
 
       {/* Resumen y acción */}
-      <Card>
+      <Card variant="raised">
         <CardContent className="p-6">
           <div className="flex justify-between items-baseline mb-6">
             <div>
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total estimado</p>
-              <span className="text-2xl font-bold text-stone-900">{formatCurrency(totalSeleccionado)}</span>
+              <p className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Total estimado</p>
+              <span className="text-2xl font-bold text-stone-900 font-serif">{formatCurrency(totalSeleccionado)}</span>
             </div>
           </div>
-          <p className="text-xs text-stone-400 mb-6">
+          <p className="text-[10px] text-stone-500 mb-6">
             Los pedidos se confirman antes de la hora límite de corte.
           </p>
           <Button
-            variant="destructive"
-            className="w-full py-4 text-lg font-bold shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50"
+            variant="ember"
+            className="w-full py-4 text-lg font-bold shadow-lg shadow-ember/30 hover:shadow-ember/50"
             disabled={pedidoCerrado || !selectedPrincipalId || confirmLoading}
             onClick={handleConfirmar}
           >
@@ -350,7 +348,7 @@ export default function ClientDashboard() {
       </Card>
 
       {error && (
-        <div className="rounded-xl bg-rose-50 border border-rose-100 p-4 text-rose-700 text-sm flex items-center gap-3">
+        <div className="rounded-lg bg-ember-50 border border-ember-200 p-4 text-ember-700 text-sm flex items-center gap-3">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getMenusHoy,
@@ -161,7 +161,7 @@ export default function AdminMenu() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
       </div>
     )
   }
@@ -170,8 +170,8 @@ export default function AdminMenu() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Utensils className="w-5 h-5 text-brand-700" />
-          <h2 className="text-2xl font-bold text-stone-900">Gestión de menú diario</h2>
+          <Utensils className="w-5 h-5 text-leaf-700" />
+          <h2 className="text-leaf-900 font-serif">Gestión de menú diario</h2>
         </div>
         <Button variant="outline" onClick={() => navigate('/admin/pedidos')}>
           Ver pedidos del día
@@ -179,27 +179,27 @@ export default function AdminMenu() {
       </div>
 
       {/* Datos del menú */}
-      <Card>
+      <Card variant="bordered">
         <CardHeader>
-          <CardTitle>Datos del menú</CardTitle>
+          <CardTitle className="text-leaf-900 font-serif">Datos del menú</CardTitle>
           <p className="text-[11px] text-stone-500 mt-1">Configura la fecha, hora de corte y estado del menú.</p>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">Fecha</label>
+            <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Fecha</label>
             <Input type="date" value={menuFecha} onChange={(e) => setMenuFecha(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">Hora de corte</label>
+            <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Hora de corte</label>
             <Input type="time" value={menuHora} onChange={(e) => setMenuHora(e.target.value)} />
           </div>
           <div className="space-y-2 flex items-end">
-            <label className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">Activo</label>
+            <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Activo</label>
             <button
               onClick={() => setMenuActivo((a) => !a)}
               className={cnSwitch(
-                'relative inline-flex w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500',
-                menuActivo ? 'bg-brand-600' : 'bg-stone-300'
+                'relative inline-flex w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-leaf-500',
+                menuActivo ? 'bg-leaf-600' : 'bg-stone-300'
               )}
               aria-label="Activar/desactivar menú"
             >
@@ -211,17 +211,17 @@ export default function AdminMenu() {
               />
             </button>
           </div>
-          <Button variant="brand" onClick={guardarMenu} disabled={saving} className="col-span-1 sm:col-span-1 md:col-span-2">
+          <Button variant="leaf" onClick={guardarMenu} disabled={saving} className="col-span-1 sm:col-span-1 md:col-span-2">
             {btnGuardarContent}
           </Button>
         </CardContent>
       </Card>
 
       {/* Platillos */}
-      <Card>
+      <Card variant="bordered">
         <CardHeader className="flex items-center justify-between">
-          <CardTitle>Platillos del menú</CardTitle>
-          <span className="text-[11px] text-stone-400 font-semibold uppercase">{platillos.length} platillo(s)</span>
+          <CardTitle className="text-leaf-900 font-serif">Platillos del menú</CardTitle>
+          <span className="text-[11px] text-stone-400 font-semibold tracking-wider uppercase">{platillos.length} platillo(s)</span>
         </CardHeader>
         <CardContent className="space-y-4">
           {platillos.length === 0 ? (
@@ -234,7 +234,7 @@ export default function AdminMenu() {
                 const editando = editingId === p.id
                 const v = editValues[p.id] ?? { ...p }
                 return (
-                  <div key={p.id} className="border border-stone-100 rounded-2xl p-4">
+                  <div key={p.id} className="border border-stone-100 rounded-lg p-4">
                     {editando ? (
                       <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-end">
                         <Input
@@ -250,7 +250,7 @@ export default function AdminMenu() {
                           onChange={(e) => setEditValues({ ...editValues, [p.id]: { ...v, porciones_disponibles: e.target.value } })}
                         />
                         <div className="flex gap-2">
-                          <Button variant="brand" size="sm" onClick={() => guardarEdicion(p.id)}>
+                          <Button variant="leaf" size="sm" onClick={() => guardarEdicion(p.id)}>
                             Guardar
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>
@@ -267,7 +267,7 @@ export default function AdminMenu() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-brand-700 font-bold text-sm">
+                          <span className="text-leaf-700 font-bold text-sm">
                             {formatCurrency(p.precio_unitario)}
                           </span>
                           <Badge variant="default" className="text-[10px] px-2 py-0.5">
@@ -298,9 +298,9 @@ export default function AdminMenu() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-stone-100">
+          <div className="pt-4 border-t border-stone-200">
             <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
-              <Plus className="w-4 h-4 text-brand-600" /> Agregar platillo
+              <Plus className="w-4 h-4 text-leaf-600" /> Agregar platillo
             </h3>
             <form onSubmit={handleNuevoPlatillo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <Input
@@ -321,13 +321,13 @@ export default function AdminMenu() {
               <select
                 value={nuevo.tipo}
                 onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
-                className="h-11 rounded-2xl border border-stone-200 bg-white px-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                className="h-10 rounded-md border border-stone-300 bg-white px-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-leaf-500 text-sm"
               >
                 <option value="principal">Principal</option>
                 <option value="bebida">Bebida</option>
                 <option value="adicional">Adicional</option>
               </select>
-              <Button variant="brand" type="submit" className="col-span-1 sm:col-span-1 lg:col-span-2">
+              <Button variant="leaf" type="submit" className="col-span-1 sm:col-span-1 lg:col-span-2">
                 Agregar
               </Button>
             </form>
@@ -337,5 +337,3 @@ export default function AdminMenu() {
     </div>
   )
 }
-
-

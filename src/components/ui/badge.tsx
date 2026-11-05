@@ -10,7 +10,7 @@ const variants = {
   success: 'border-emerald-100 text-emerald-700 bg-emerald-50',
   warning: 'border-amber-100 text-amber-700 bg-amber-50',
   error: 'border-rose-100 text-rose-700 bg-rose-50',
-  brand: 'border-brand-100 text-brand-700 bg-brand-50',
+  brand: 'border-leaf-100 text-leaf-700 bg-leaf-50',
   info: 'border-blue-100 text-blue-700 bg-blue-50',
 }
 
@@ -19,7 +19,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     <span
       ref={ref}
       className={cn(
-        'inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+        'inline-flex items-center rounded-md border px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
         variants[variant],
         className
       )}

@@ -71,7 +71,7 @@ export default function MiCuenta() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
       </div>
     )
   }
@@ -82,24 +82,22 @@ export default function MiCuenta() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-stone-900">Estado de cuenta</h2>
-          <p className="text-stone-500 text-sm">Tu saldo acumulado y consumo por quincena</p>
+          <h2 className="text-leaf-900 font-serif">Estado de cuenta</h2>
+          <p className="text-stone-600 text-sm">Tu saldo acumulado y consumo por quincena</p>
         </div>
       </div>
 
       {/* Tarjeta de saldo actual */}
-      <Card className="border-brand-100 bg-gradient-to-r from-brand-50 to-brand-100 shadow-sm shadow-brand/10">
+      <Card variant="raised" className="border-leaf-100 bg-leaf-50/40 shadow-sm shadow-leaf/10">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
-              Saldo quincena actual
-            </p>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-[10px] font-semibold tracking-wider text-leaf-700 uppercase">Saldo quincena actual</p>
+            <p className="text-[10px] text-stone-500 mt-1">
               {cuenta ? `${new Date(cuenta.fecha_inicio).toLocaleDateString('es-NI')} al ${new Date(cuenta.fecha_fin).toLocaleDateString('es-NI')}` : ''}
             </p>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold text-brand-700">
+            <div className="text-3xl font-bold text-stone-900 font-serif">
               {formatCurrency(cuenta?.total_acumulado ?? 0)}
             </div>
             <Badge variant={estadoBadge[estado] as any} className="mt-2">
@@ -110,9 +108,9 @@ export default function MiCuenta() {
       </Card>
 
       {/* Desglose de la quincena actual */}
-      <Card>
+      <Card variant="bordered">
         <CardHeader>
-          <CardTitle>Desglose de platillos consumidos</CardTitle>
+          <CardTitle className="text-leaf-900">Desglose de platillos consumidos</CardTitle>
           <p className="text-[11px] text-stone-500 mt-1">Detalle de tu consumo en la quincena actual</p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -148,7 +146,7 @@ export default function MiCuenta() {
               })}
               <div className="pt-4 border-t border-stone-100 flex justify-between text-sm font-semibold">
                 <span>Total quincena</span>
-                <span className="text-brand-700">{formatCurrency(cuenta?.total_acumulado ?? 0)}</span>
+                <span className="text-leaf-700">{formatCurrency(cuenta?.total_acumulado ?? 0)}</span>
               </div>
             </div>
           )}
@@ -156,10 +154,10 @@ export default function MiCuenta() {
       </Card>
 
       {/* Historial y filtro de quincenas anteriores */}
-      <Card>
+      <Card variant="bordered">
         <CardHeader className="flex items-center justify-between">
-          <CardTitle>Quincenas anteriores</CardTitle>
-          <span className="text-[11px] text-stone-400 font-semibold uppercase tracking-wider">
+          <CardTitle className="text-leaf-900">Quincenas anteriores</CardTitle>
+          <span className="text-[11px] text-stone-400 font-semibold tracking-wider uppercase">
             {historial.length} registro(s)
           </span>
         </CardHeader>
@@ -170,10 +168,10 @@ export default function MiCuenta() {
                 key={c.id}
                 onClick={() => verPeriodo(c.fecha_inicio, c.fecha_fin)}
                 className={cnBtn(
-                  'flex flex-col items-center gap-2 px-4 py-3 rounded-2xl border border-stone-100 bg-white text-stone-700 hover:bg-brand-50 hover:border-brand-100 hover:text-brand-700 transition-all duration-200'
+                  'flex flex-col items-center gap-2 px-4 py-3 rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-leaf-50 hover:border-leaf-200 hover:text-leaf-700 transition-all duration-200'
                 )}
               >
-                <span className="text-[10px] text-stone-400 font-semibold uppercase">
+                <span className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">
                   {new Date(c.fecha_inicio).toLocaleDateString('es-NI', { month: 'short', day: 'numeric' })}
                 </span>
                 <span className="text-sm font-bold">{formatCurrency(c.total_acumulado)}</span>
@@ -186,7 +184,7 @@ export default function MiCuenta() {
           </div>
 
           {selectedPeriodo && (
-            <div className="mt-4 pt-4 border-t border-stone-100">
+            <div className="mt-4 pt-4 border-t border-stone-200">
               <div className="flex items-center gap-2 mb-3">
                 <History className="w-4 h-4 text-stone-500" />
                 <span className="text-sm font-semibold text-stone-800">

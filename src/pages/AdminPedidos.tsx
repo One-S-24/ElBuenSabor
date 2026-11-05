@@ -74,7 +74,7 @@ export default function AdminPedidos() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
       </div>
     )
   }
@@ -83,12 +83,12 @@ export default function AdminPedidos() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2">
-          <List className="w-5 h-5 text-brand-700" />
-          <h2 className="text-2xl font-bold text-stone-900">Pedidos del día</h2>
+          <List className="w-5 h-5 text-leaf-700" />
+          <h2 className="text-leaf-900 font-serif">Pedidos del día</h2>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-brand-600"></span>
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-leaf-50 text-leaf-700 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-leaf-600"></span>
             Total: <span className="font-bold">{formatCurrency(totalDia)}</span>
           </div>
           <Button
@@ -115,17 +115,17 @@ export default function AdminPedidos() {
           <p className="text-stone-500 text-sm">No hay pedidos confirmados hoy.</p>
         </div>
       ) : (
-        <Card>
+        <Card variant="bordered">
           <CardContent className="p-0 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-stone-100">
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Cliente</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Hora</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Platillos</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider text-right">Total</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Estado</th>
+                  <tr className="border-b border-stone-200">
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Cliente</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Hora</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Platillos</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider text-right">Total</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
