@@ -1,0 +1,322 @@
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  getMenusHoy,
+  getPlatillosPorMenu,
+  crearMenu,
+  actualizarMenu,
+  guardarPlatillo,
+  eliminarPlatillo,
+} from '../services/adminService'
+import { formatCurrency } from '../lib/utils'
+import { Plus, Trash2, Save, Utensils } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import Button from '../components/ui/button'
+import Input from '../components/ui/input'
+import Badge from '../components/ui/badge'
+
+export default function AdminMenu() {
+  const navigate = useNavigate()
+  const [menu, setMenu] = useState<any>(null)
+  const [platillos, setPlatillos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  // Datos del menú (fecha / hora límite)
+  const [menuFecha, setMenuFecha] = useState('')
+  const [menuHora, setMenuHora] = useState('11:00:00')
+  const [menuActivo, setMenuActivo] = useState(true)
+
+  // Form nuevo platillo
+  const [nuevo, setNuevo] = useState<{
+    nombre: string
+    descripcion: string
+    precio_unitario: string
+    porciones_disponibles: string
+    tipo: string
+  }>({
+    nombre: '',
+    descripcion: '',
+    precio_unitario: '',
+    porciones_disponibles: '',
+    tipo: 'principal',
+  })
+
+  // Edición inline de un platillo existente
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<Record<string, any>>({})
+
+  useEffect(() => {
+    let mounted = true
+    const cargar = async () => {
+      try {
+        setLoading(true)
+        const menus = await getMenusHoy()
+        if (mounted) {
+          setMenu(menus[0] ?? null)
+          if (menus[0]) {
+            setMenuFecha(menus[0].fecha)
+            setMenuHora(menus[0].hora_limite_pedido)
+            setMenuActivo(menus[0].activo)
+            const ps = await getPlatillosPorMenu(menus[0].id)
+            setPlatillos(ps)
+          }
+        }
+      } catch (err: any) {
+        console.error(err)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    cargar()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const guardarMenu = async () => {
+    setSaving(true)
+    try {
+      if (menu) {
+        await actualizarMenu(menu.id, menuFecha, menuHora, menuActivo)
+      } else {
+        const creado = await crearMenu(menuFecha, menuHora)
+        setMenu(creado)
+        setMenuActivo(creado.activo)
+      }
+    } catch (err: any) {
+      alert(err.message || 'No se pudo guardar el menú')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleNuevoPlatillo = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!menu) return
+    try {
+      await guardarPlatillo({
+        menu_id: menu.id,
+        nombre: nuevo.nombre,
+        descripcion: nuevo.descripcion || null,
+        precio_unitario: parseFloat(nuevo.precio_unitario) || 0,
+        porciones_disponibles: parseInt(nuevo.porciones_disponibles) || 0,
+        tipo: nuevo.tipo as 'principal' | 'bebida' | 'adicional',
+      })
+      setNuevo({ nombre: '', descripcion: '', precio_unitario: '', porciones_disponibles: '', tipo: 'principal' })
+      const ps = await getPlatillosPorMenu(menu.id)
+      setPlatillos(ps)
+    } catch (err: any) {
+      alert(err.message || 'No se pudo agregar el platillo')
+    }
+  }
+
+  const guardarEdicion = async (id: string) => {
+    const v = editValues[id]
+    try {
+      await guardarPlatillo({
+        id,
+        menu_id: menu!.id,
+        nombre: v.nombre,
+        descripcion: v.descripcion || null,
+        precio_unitario: parseFloat(v.precio_unitario) || 0,
+        porciones_disponibles: parseInt(v.porciones_disponibles) || 0,
+        tipo: v.tipo as 'principal' | 'bebida' | 'adicional',
+      })
+      setEditingId(null)
+      const ps = await getPlatillosPorMenu(menu!.id)
+      setPlatillos(ps)
+    } catch (err: any) {
+      alert(err.message || 'No se pudo actualizar el platillo')
+    }
+  }
+
+  const borrarPlatillo = async (id: string) => {
+    if (!confirm('¿Eliminar este platillo del menú?')) return
+    try {
+      await eliminarPlatillo(id)
+      const ps = await getPlatillosPorMenu(menu!.id)
+      setPlatillos(ps)
+    } catch (err: any) {
+      alert(err.message || 'No se pudo eliminar el platillo')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-brand-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Utensils className="w-5 h-5 text-brand-700" />
+          <h2 className="text-xl font-bold text-stone-800">Gestión de menú diario</h2>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/admin/pedidos')}>
+          Ver pedidos del día
+        </Button>
+      </div>
+
+      {/* Datos del menú */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Datos del menú</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-stone-600 uppercase">Fecha</label>
+            <Input type="date" value={menuFecha} onChange={(e) => setMenuFecha(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-stone-600 uppercase">Hora de corte</label>
+            <Input type="time" value={menuHora} onChange={(e) => setMenuHora(e.target.value)} />
+          </div>
+          <div className="space-y-2 flex items-end">
+            <label className="text-xs font-semibold text-stone-600 uppercase">Activo</label>
+            <button
+              onClick={() => setMenuActivo((a) => !a)}
+              className={cnSwitch(
+                'relative inline-flex w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500',
+                menuActivo ? 'bg-brand-600' : 'bg-stone-300'
+              )}
+              aria-label="Activar/desactivar menú"
+            >
+              <span
+                className={cnSwitchKnob(
+                  'block rounded-full h-4 w-4 transform transition-transform shadow',
+                  menuActivo ? 'translate-x-6 bg-white' : 'translate-x-1 bg-stone-900'
+                )}
+              />
+            </button>
+          </div>
+          <Button variant="brand" onClick={guardarMenu} disabled={saving} className="col-span-1 sm:col-span-1 md:col-span-2">
+            {saving ? 'Guardando...' : <><Save className="w-4 h-4 mr-2" /> Guardar menú</>}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Platillos */}
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle>Platillos del menú</CardTitle>
+          <span className="text-xs text-stone-500">{platillos.length} platillo(s)</span>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {platillos.length === 0 ? (
+            <p className="text-center text-stone-500 py-6">Aún no hay platillos. Agrega uno abajo.</p>
+          ) : (
+            <div className="space-y-2">
+              {platillos.map((p) => {
+                const editando = editingId === p.id
+                const v = editValues[p.id] ?? { ...p }
+                return (
+                  <div key={p.id} className="border border-stone-200 rounded-xl p-3">
+                    {editando ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+                        <Input
+                          value={v.nombre}
+                          onChange={(e) => setEditValues({ ...editValues, [p.id]: { ...v, nombre: e.target.value } })}
+                        />
+                        <Input
+                          value={v.precio_unitario}
+                          onChange={(e) => setEditValues({ ...editValues, [p.id]: { ...v, precio_unitario: e.target.value } })}
+                        />
+                        <Input
+                          value={v.porciones_disponibles}
+                          onChange={(e) => setEditValues({ ...editValues, [p.id]: { ...v, porciones_disponibles: e.target.value } })}
+                        />
+                        <div className="flex gap-2">
+                          <Button variant="brand" size="sm" onClick={() => guardarEdicion(p.id)}>Guardar</Button>
+                          <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>Cancelar</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="font-semibold text-stone-800">{p.nombre}</span>
+                        {p.descripcion && (
+                          <span className="text-xs text-stone-500">{p.descripcion}</span>
+                        )}
+                        <span className="ml-auto text-brand-700 font-bold">
+                          {formatCurrency(p.precio_unitario)}
+                        </span>
+                        <Badge variant="default" className="text-[10px] px-2 py-0.5">
+                          {p.tipo}
+                        </Badge>
+                        <span className="text-xs text-stone-400">
+                          Stock: {p.porciones_disponibles}
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditValues({ ...editValues, [p.id]: { ...p } })
+                              setEditingId(p.id)
+                            }}
+                          >
+                            Editar
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => borrarPlatillo(p.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Form agregar platillo */}
+          <div className="pt-4 border-t border-stone-200">
+            <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Agregar platillo
+            </h3>
+            <form onSubmit={handleNuevoPlatillo} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <Input
+                placeholder="Nombre"
+                value={nuevo.nombre}
+                onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
+              />
+              <Input
+                placeholder="Precio"
+                value={nuevo.precio_unitario}
+                onChange={(e) => setNuevo({ ...nuevo, precio_unitario: e.target.value })}
+              />
+              <Input
+                placeholder="Porciones"
+                value={nuevo.porciones_disponibles}
+                onChange={(e) => setNuevo({ ...nuevo, porciones_disponibles: e.target.value })}
+              />
+              <select
+                value={nuevo.tipo}
+                onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
+                className="h-10 rounded-xl border border-stone-300 bg-white px-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="principal">Principal</option>
+                <option value="bebida">Bebida</option>
+                <option value="adicional">Adicional</option>
+              </select>
+              <Button variant="brand" type="submit" className="col-span-1 sm:col-span-1 md:col-span-2">
+                Agregar
+              </Button>
+            </form>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function cnSwitch(...classes: (string | undefined)[]) {
+  return classes.filter(Boolean).join(' ')
+}
+function cnSwitchKnob(...classes: (string | undefined)[]) {
+  return classes.filter(Boolean).join(' ')
+}
