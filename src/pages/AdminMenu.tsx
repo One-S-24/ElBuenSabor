@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getMenusHoy,
@@ -15,6 +15,13 @@ import Button from '../components/ui/button'
 import Input from '../components/ui/input'
 import Badge from '../components/ui/badge'
 
+function cnSwitch(...classes: (string | undefined)[]) {
+  return classes.filter(Boolean).join(' ')
+}
+function cnSwitchKnob(...classes: (string | undefined)[]) {
+  return classes.filter(Boolean).join(' ')
+}
+
 export default function AdminMenu() {
   const navigate = useNavigate()
   const [menu, setMenu] = useState<any>(null)
@@ -22,12 +29,10 @@ export default function AdminMenu() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  // Datos del menú (fecha / hora límite)
   const [menuFecha, setMenuFecha] = useState('')
   const [menuHora, setMenuHora] = useState('11:00:00')
   const [menuActivo, setMenuActivo] = useState(true)
 
-  // Form nuevo platillo
   const [nuevo, setNuevo] = useState<{
     nombre: string
     descripcion: string
@@ -42,7 +47,6 @@ export default function AdminMenu() {
     tipo: 'principal',
   })
 
-  // Edición inline de un platillo existente
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<Record<string, any>>({})
 
@@ -73,6 +77,18 @@ export default function AdminMenu() {
       mounted = false
     }
   }, [])
+
+  const btnGuardarContent = saving ? (
+    <>
+      <Save className="w-4 h-4 animate-spin mr-2" />
+      Guardando...
+    </>
+  ) : (
+    <>
+      <Save className="w-4 h-4 mr-2" />
+      Guardar menú
+    </>
+  );
 
   const guardarMenu = async () => {
     setSaving(true)
@@ -151,11 +167,11 @@ export default function AdminMenu() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2">
           <Utensils className="w-5 h-5 text-brand-700" />
-          <h2 className="text-xl font-bold text-stone-800">Gestión de menú diario</h2>
+          <h2 className="text-2xl font-bold text-stone-900">Gestión de menú diario</h2>
         </div>
         <Button variant="outline" onClick={() => navigate('/admin/pedidos')}>
           Ver pedidos del día
@@ -166,22 +182,23 @@ export default function AdminMenu() {
       <Card>
         <CardHeader>
           <CardTitle>Datos del menú</CardTitle>
+          <p className="text-[11px] text-stone-500 mt-1">Configura la fecha, hora de corte y estado del menú.</p>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-stone-600 uppercase">Fecha</label>
+            <label className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">Fecha</label>
             <Input type="date" value={menuFecha} onChange={(e) => setMenuFecha(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-stone-600 uppercase">Hora de corte</label>
+            <label className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">Hora de corte</label>
             <Input type="time" value={menuHora} onChange={(e) => setMenuHora(e.target.value)} />
           </div>
           <div className="space-y-2 flex items-end">
-            <label className="text-xs font-semibold text-stone-600 uppercase">Activo</label>
+            <label className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">Activo</label>
             <button
               onClick={() => setMenuActivo((a) => !a)}
               className={cnSwitch(
-                'relative inline-flex w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500',
+                'relative inline-flex w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500',
                 menuActivo ? 'bg-brand-600' : 'bg-stone-300'
               )}
               aria-label="Activar/desactivar menú"
@@ -195,7 +212,7 @@ export default function AdminMenu() {
             </button>
           </div>
           <Button variant="brand" onClick={guardarMenu} disabled={saving} className="col-span-1 sm:col-span-1 md:col-span-2">
-            {saving ? 'Guardando...' : <><Save className="w-4 h-4 mr-2" /> Guardar menú</>}
+            {btnGuardarContent}
           </Button>
         </CardContent>
       </Card>
@@ -204,20 +221,22 @@ export default function AdminMenu() {
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Platillos del menú</CardTitle>
-          <span className="text-xs text-stone-500">{platillos.length} platillo(s)</span>
+          <span className="text-[11px] text-stone-400 font-semibold uppercase">{platillos.length} platillo(s)</span>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {platillos.length === 0 ? (
-            <p className="text-center text-stone-500 py-6">Aún no hay platillos. Agrega uno abajo.</p>
+            <div className="p-12 text-center">
+              <p className="text-stone-500 text-sm">Aún no hay platillos. Agrega uno abajo.</p>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {platillos.map((p) => {
                 const editando = editingId === p.id
                 const v = editValues[p.id] ?? { ...p }
                 return (
-                  <div key={p.id} className="border border-stone-200 rounded-xl p-3">
+                  <div key={p.id} className="border border-stone-100 rounded-2xl p-4">
                     {editando ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-end">
                         <Input
                           value={v.nombre}
                           onChange={(e) => setEditValues({ ...editValues, [p.id]: { ...v, nombre: e.target.value } })}
@@ -231,25 +250,31 @@ export default function AdminMenu() {
                           onChange={(e) => setEditValues({ ...editValues, [p.id]: { ...v, porciones_disponibles: e.target.value } })}
                         />
                         <div className="flex gap-2">
-                          <Button variant="brand" size="sm" onClick={() => guardarEdicion(p.id)}>Guardar</Button>
-                          <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>Cancelar</Button>
+                          <Button variant="brand" size="sm" onClick={() => guardarEdicion(p.id)}>
+                            Guardar
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>
+                            Cancelar
+                          </Button>
                         </div>
                       </div>
                     ) : (
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="font-semibold text-stone-800">{p.nombre}</span>
-                        {p.descripcion && (
-                          <span className="text-xs text-stone-500">{p.descripcion}</span>
-                        )}
-                        <span className="ml-auto text-brand-700 font-bold">
-                          {formatCurrency(p.precio_unitario)}
-                        </span>
-                        <Badge variant="default" className="text-[10px] px-2 py-0.5">
-                          {p.tipo}
-                        </Badge>
-                        <span className="text-xs text-stone-400">
-                          Stock: {p.porciones_disponibles}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-stone-900 text-sm truncate">{p.nombre}</span>
+                          {p.descripcion && (
+                            <span className="text-[11px] text-stone-500 block mt-0.5">{p.descripcion}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-brand-700 font-bold text-sm">
+                            {formatCurrency(p.precio_unitario)}
+                          </span>
+                          <Badge variant="default" className="text-[10px] px-2 py-0.5">
+                            {p.tipo}
+                          </Badge>
+                          <span className="text-[11px] text-stone-400">Stock: {p.porciones_disponibles}</span>
+                        </div>
                         <div className="flex gap-1">
                           <Button
                             variant="outline"
@@ -273,12 +298,11 @@ export default function AdminMenu() {
             </div>
           )}
 
-          {/* Form agregar platillo */}
-          <div className="pt-4 border-t border-stone-200">
+          <div className="pt-4 border-t border-stone-100">
             <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Agregar platillo
+              <Plus className="w-4 h-4 text-brand-600" /> Agregar platillo
             </h3>
-            <form onSubmit={handleNuevoPlatillo} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <form onSubmit={handleNuevoPlatillo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <Input
                 placeholder="Nombre"
                 value={nuevo.nombre}
@@ -297,13 +321,13 @@ export default function AdminMenu() {
               <select
                 value={nuevo.tipo}
                 onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
-                className="h-10 rounded-xl border border-stone-300 bg-white px-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="h-11 rounded-2xl border border-stone-200 bg-white px-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
               >
                 <option value="principal">Principal</option>
                 <option value="bebida">Bebida</option>
                 <option value="adicional">Adicional</option>
               </select>
-              <Button variant="brand" type="submit" className="col-span-1 sm:col-span-1 md:col-span-2">
+              <Button variant="brand" type="submit" className="col-span-1 sm:col-span-1 lg:col-span-2">
                 Agregar
               </Button>
             </form>
@@ -314,9 +338,4 @@ export default function AdminMenu() {
   )
 }
 
-function cnSwitch(...classes: (string | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
-}
-function cnSwitchKnob(...classes: (string | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
-}
+

@@ -3,11 +3,12 @@ import { useAuthStore } from '../stores/useAuthStore'
 import { useOrderStore } from '../stores/useOrderStore'
 import { getCuentaActual } from '../services/accountService'
 import { getMenusHoy, getPlatillosPorMenu } from '../services/adminService'
-import { formatCurrency, cn } from '../lib/utils'
-import { CheckCircle2, AlertCircle, Utensils, Coffee, Droplets } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { formatCurrency } from '../lib/utils'
+import { CheckCircle2, AlertCircle, Utensils, Coffee, Droplets, Clock, ShieldCheck } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import Button from '../components/ui/button'
 import Badge from '../components/ui/badge'
+import { cn } from '../lib/utils'
 
 export default function ClientDashboard() {
   const { profile } = useAuthStore()
@@ -21,9 +22,6 @@ export default function ClientDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
   const [confirmOk, setConfirmOk] = useState(false)
-
-  const principalOptions = platillos.filter((p) => p.tipo === 'principal')
-  const bebidaOptions = platillos.filter((p) => p.tipo === 'bebida')
 
   const [selectedPrincipalId, setSelectedPrincipalId] = useState<string | null>(null)
   const [selectedBebidaId, setSelectedBebidaId] = useState<string | null>(null)
@@ -71,6 +69,25 @@ export default function ClientDashboard() {
     }
   }, [clienteId])
 
+  const principalOptions = platillos.filter((p) => p.tipo === 'principal')
+  const bebidaOptions = platillos.filter((p) => p.tipo === 'bebida')
+
+  const btnConfirmContent = confirmOk ? (
+    <>
+      <CheckCircle2 className="w-5 h-5 mr-2" /> ¡Pedido confirmado!
+    </>
+  ) : confirmLoading ? (
+    <>
+      <Clock className="w-4 h-4 animate-spin mr-2" />
+      Confirmando...
+    </>
+  ) : (
+    <>
+      <ShieldCheck className="w-4 h-4 mr-2" />
+      CONFIRMAR PEDIDO DIARIO
+    </>
+  );
+
   const handleConfirmar = async () => {
     if (!menu) return
     if (!selectedPrincipalId) {
@@ -99,7 +116,6 @@ export default function ClientDashboard() {
     }
 
     try {
-      // Sincronizar carrito con la store antes de enviar
       const { enviarPedido } = await import('../services/orderService')
       const res = await enviarPedido(clienteId!, menu.id, cartItems)
       if (res.success) {
@@ -127,7 +143,15 @@ export default function ClientDashboard() {
   if (!menu) {
     return (
       <div className="p-6 text-center">
-        <p className="text-stone-600">No hay menú disponible hoy.</p>
+        <Card className="max-w-sm mx-auto border-0 shadow-xl">
+          <CardContent className="text-center py-10">
+            <Clock className="w-12 h-12 mx-auto text-stone-300 mb-4" />
+            <CardTitle>No hay menú disponible hoy</CardTitle>
+            <CardDescription>
+              El menú del día aún no ha sido publicado. Vuelve más tarde.
+            </CardDescription>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -141,40 +165,59 @@ export default function ClientDashboard() {
   const nombreDia = new Date().toLocaleDateString('es-NI', { weekday: 'long' })
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Header de bienvenida */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">Hola, {profile?.nombre ?? ''}</h1>
+          <p className="text-stone-500 text-sm">Lista para ordenar tu almuerzo.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant={pedidoCerrado ? 'error' : 'success'}>
+            {pedidoCerrado ? 'Hora límite superada' : 'Pedido disponible'}
+          </Badge>
+          <ShieldCheck className={`w-4 h-4 ${pedidoCerrado ? 'text-rose-500' : 'text-emerald-500'}`} />
+        </div>
+      </div>
+
       {/* Saldo */}
-      <Card className="border-brand-100 bg-brand-50/50">
+      <Card className="border-brand-100 bg-brand-50/40 hover:shadow-md transition-shadow">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-brand-700 uppercase tracking-wider">Saldo actual (quincena)</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
+                Saldo quincenal actual
+              </p>
+              <p className="text-xs text-stone-500">
+                {cuenta ? `${new Date(cuenta.fecha_inicio).toLocaleDateString('es-NI')} al ${new Date(cuenta.fecha_fin).toLocaleDateString('es-NI')}` : ''}
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-3xl font-bold text-brand-700">
+                {cuenta ? formatCurrency(cuenta.total_acumulado) : formatCurrency(0)}
+              </span>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold text-brand-700">
-              {cuenta ? formatCurrency(cuenta.total_acumulado) : formatCurrency(0)}
-            </span>
-          </div>
-        </CardContent>
       </Card>
 
       {/* Menú del día */}
       <Card>
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-brand-700">Menú de hoy ({nombreDia})</CardTitle>
-            <p className="text-xs text-stone-500">Lista para ordenar tu almuerzo.</p>
+            <p className="text-xs text-stone-500">Selecciona tus platillos y bebidas.</p>
           </div>
           <Badge variant={pedidoCerrado ? 'error' : 'brand'}>
             {pedidoCerrado ? 'Cerrado' : 'Disponible'}
           </Badge>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-6">
           {/* Plato principal */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Utensils className="w-4 h-4 text-stone-500" />
-              <span className="font-semibold text-stone-800">Plato principal</span>
+              <Utensils className="w-4 h-4 text-stone-400" />
+              <span className="font-semibold text-stone-800 text-sm">Plato principal</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {principalOptions.map((p) => {
@@ -184,10 +227,10 @@ export default function ClientDashboard() {
                     key={p.id}
                     onClick={() => setSelectedPrincipalId(p.id)}
                     className={cn(
-                      'flex flex-col items-center justify-between p-3 rounded-xl border transition-all',
+                      'flex flex-col items-center justify-between p-3 rounded-2xl border transition-all duration-200',
                       seleccionado
-                        ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-600'
-                        : 'border-stone-200 bg-white hover:border-stone-300'
+                        ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-600 shadow-sm shadow-brand/20'
+                        : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
                     )}
                   >
                     <div className="flex items-center gap-2 w-full justify-center">
@@ -195,10 +238,10 @@ export default function ClientDashboard() {
                         type="radio"
                         checked={seleccionado}
                         onChange={() => setSelectedPrincipalId(p.id)}
-                        className="w-4 h-4 text-brand-600"
+                        className="w-4 h-4 text-brand-600 accent-brand-600"
                         readOnly
                       />
-                      <span className="text-sm font-medium text-stone-800">{p.nombre}</span>
+                      <span className="text-sm font-medium text-stone-800 leading-tight">{p.nombre}</span>
                     </div>
                     <span className="text-brand-700 font-bold">
                       {formatCurrency(p.precio_unitario)}
@@ -210,10 +253,10 @@ export default function ClientDashboard() {
           </div>
 
           {/* Bebida */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Coffee className="w-4 h-4 text-stone-500" />
-              <span className="font-semibold text-stone-800">Bebida</span>
+              <Coffee className="w-4 h-4 text-stone-400" />
+              <span className="font-semibold text-stone-800 text-sm">Bebida</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {bebidaOptions.map((p) => {
@@ -223,10 +266,10 @@ export default function ClientDashboard() {
                     key={p.id}
                     onClick={() => setSelectedBebidaId(p.id)}
                     className={cn(
-                      'flex flex-col items-center justify-between p-3 rounded-xl border transition-all',
+                      'flex flex-col items-center justify-between p-3 rounded-2xl border transition-all duration-200',
                       seleccionado
-                        ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-600'
-                        : 'border-stone-200 bg-white hover:border-stone-300'
+                        ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-600 shadow-sm shadow-brand/20'
+                        : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
                     )}
                   >
                     <div className="flex items-center gap-2 w-full justify-center">
@@ -234,10 +277,10 @@ export default function ClientDashboard() {
                         type="radio"
                         checked={seleccionado}
                         onChange={() => setSelectedBebidaId(p.id)}
-                        className="w-4 h-4 text-brand-600"
+                        className="w-4 h-4 text-brand-600 accent-brand-600"
                         readOnly
                       />
-                      <span className="text-sm font-medium text-stone-800">{p.nombre}</span>
+                      <span className="text-sm font-medium text-stone-800 leading-tight">{p.nombre}</span>
                     </div>
                     <span className="text-brand-700 font-bold">
                       {formatCurrency(p.precio_unitario)}
@@ -249,16 +292,16 @@ export default function ClientDashboard() {
           </div>
 
           {/* Cantidad */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2">
-              <Droplets className="w-4 h-4 text-stone-500" />
-              <span className="font-semibold text-stone-800">Cantidad de porciones</span>
-            </label>
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
+              <Droplets className="w-4 h-4 text-stone-400" />
+              <span className="font-semibold text-stone-800 text-sm">Cantidad de porciones</span>
+            </div>
+            <div className="flex items-center gap-3">
               <Button variant="outline" size="sm" onClick={() => setCantidad((c) => Math.max(1, c - 1))}>
                 −
               </Button>
-              <span className="w-8 text-center font-bold text-stone-800">{cantidad}</span>
+              <span className="w-10 text-center font-bold text-stone-800">{cantidad}</span>
               <Button variant="outline" size="sm" onClick={() => setCantidad((c) => c + 1)}>
                 +
               </Button>
@@ -266,11 +309,18 @@ export default function ClientDashboard() {
           </div>
 
           {pedidoCerrado && (
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-              <AlertCircle className="w-5 h-5 text-amber-600" />
-              <span className="text-sm text-amber-800 ml-2">
-                Hora límite de corte superada (11:00 AM). No se pueden tomar más pedidos hoy.
-              </span>
+            <div className="rounded-xl bg-rose-50 border border-rose-100 p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-rose-800">
+                    Hora límite de corte superada
+                  </p>
+                  <p className="text-xs text-rose-600 mt-1">
+                    Los pedidos cierran a las 11:00 AM. No se pueden tomar más pedidos hoy.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
@@ -278,36 +328,30 @@ export default function ClientDashboard() {
 
       {/* Resumen y acción */}
       <Card>
-        <CardContent className="p-5">
-          <div className="flex justify-between items-baseline mb-3">
-            <span className="text-stone-600">Total estimado</span>
-            <span className="text-xl font-bold text-stone-800">{formatCurrency(totalSeleccionado)}</span>
+        <CardContent className="p-6">
+          <div className="flex justify-between items-baseline mb-6">
+            <div>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total estimado</p>
+              <span className="text-2xl font-bold text-stone-900">{formatCurrency(totalSeleccionado)}</span>
+            </div>
           </div>
-          <p className="text-xs text-stone-500 mb-4">
+          <p className="text-xs text-stone-400 mb-6">
             Los pedidos se confirman antes de la hora límite de corte.
           </p>
           <Button
             variant="destructive"
-            className="w-full py-3 text-lg font-bold shadow-lg"
+            className="w-full py-4 text-lg font-bold shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50"
             disabled={pedidoCerrado || !selectedPrincipalId || confirmLoading}
             onClick={handleConfirmar}
           >
-            {confirmOk ? (
-              <>
-                <CheckCircle2 className="w-5 h-5 mr-2" /> ¡Pedido confirmado!
-              </>
-            ) : confirmLoading ? (
-              'Confirmando...'
-            ) : (
-              'CONFIRMAR PEDIDO DIARIO'
-            )}
+            {btnConfirmContent}
           </Button>
         </CardContent>
       </Card>
 
       {error && (
-        <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-rose-700 text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />
+        <div className="rounded-xl bg-rose-50 border border-rose-100 p-4 text-rose-700 text-sm flex items-center gap-3">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>
       )}

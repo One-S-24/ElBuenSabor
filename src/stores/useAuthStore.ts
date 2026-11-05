@@ -10,6 +10,7 @@ export interface AuthState {
   isLoading: boolean
   setUser: (user: User | null) => void
   setProfile: (profile: Profile | null) => void
+  setIsLoading: (isLoading: boolean) => void
   login: (email: string, pass: string) => Promise<void>
   logout: () => Promise<void>
   fetchProfile: () => Promise<void>
@@ -23,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       setUser: (user) => set({ user }),
       setProfile: (profile) => set({ profile }),
+      setIsLoading: (isLoading) => set({ isLoading }),
       login: async (email, pass) => {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -44,8 +46,13 @@ export const useAuthStore = create<AuthState>()(
           .from('perfiles')
           .select('*')
           .eq('id', user.id)
-          .single()
-        if (!error && data) {
+          .maybeSingle()
+        if (error) {
+          console.error('Error fetching profile:', error.message)
+          set({ profile: null })
+          return
+        }
+        if (data) {
           set({ profile: data as Profile })
         }
       },

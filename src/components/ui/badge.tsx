@@ -2,15 +2,16 @@ import * as React from 'react'
 import { cn } from '../../lib/utils'
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'error' | 'brand'
+  variant?: 'default' | 'success' | 'warning' | 'error' | 'brand' | 'info'
 }
 
 const variants = {
-  default: 'border-stone-300 text-stone-800 bg-stone-100',
-  success: 'border-emerald-200 text-emerald-800 bg-emerald-50',
-  warning: 'border-amber-200 text-amber-800 bg-amber-50',
-  error: 'border-rose-200 text-rose-800 bg-rose-50',
-  brand: 'border-brand-200 text-brand-700 bg-brand-50',
+  default: 'border-stone-200 text-stone-700 bg-stone-50',
+  success: 'border-emerald-100 text-emerald-700 bg-emerald-50',
+  warning: 'border-amber-100 text-amber-700 bg-amber-50',
+  error: 'border-rose-100 text-rose-700 bg-rose-50',
+  brand: 'border-brand-100 text-brand-700 bg-brand-50',
+  info: 'border-blue-100 text-blue-700 bg-blue-50',
 }
 
 const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
@@ -18,7 +19,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     <span
       ref={ref}
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
+        'inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
         variants[variant],
         className
       )}

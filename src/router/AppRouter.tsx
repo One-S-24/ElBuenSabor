@@ -67,17 +67,21 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
 }
 
 export default function AppRouter() {
-  const { setUser, setProfile, fetchProfile } = useAuthStore()
+  const { setUser, setProfile, setIsLoading, fetchProfile } = useAuthStore()
 
   // Restaurar sesión y mantener el usuario sincronizado con Supabase Auth
   useEffect(() => {
     let mounted = true
 
     const initAuth = async () => {
-      const { data } = await supabase.auth.getSession()
-      if (mounted && data.session) {
-        setUser(data.session.user)
-        await fetchProfile()
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (mounted && data.session) {
+          setUser(data.session.user)
+          await fetchProfile()
+        }
+      } finally {
+        if (mounted) setIsLoading(false)
       }
     }
     initAuth()

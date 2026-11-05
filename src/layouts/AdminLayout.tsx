@@ -22,25 +22,27 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex min-h-svh bg-brand-50">
+    <div className="flex min-h-svh bg-stone-50">
       {/* Sidebar (desktop) */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-stone-200 transform transition-transform duration-300',
+          'fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-stone-100 transform transition-transform duration-300 flex flex-col',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex items-center justify-between h-16 px-5 border-b border-stone-200">
-          <span className="font-bold text-brand-700 text-lg">El Buen Sabor</span>
+        <div className="flex items-center justify-between h-16 px-5 border-b border-stone-100 shrink-0">
+          <Link to="/admin/menu" className="flex items-center gap-2">
+            <span className="font-bold text-brand-700 text-lg tracking-tight">El Buen Sabor</span>
+          </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-1 text-stone-500 hover:text-stone-700"
+            className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-50 rounded-xl transition-colors"
             aria-label="Cerrar menú"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {adminNavItems.map((item) => {
             const Icon = item.icon
             const active = window.location.pathname === item.to
@@ -49,28 +51,40 @@ export default function AdminLayout() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200',
                   active
-                    ? 'bg-brand-50 text-brand-700'
+                    ? 'bg-brand-50 text-brand-700 shadow-sm shadow-brand/10'
                     : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                 )}
               >
-                <Icon className="w-5 h-5" />
+                <div className="w-5 h-5 flex-shrink-0">
+                  <Icon className="w-full h-full" />
+                </div>
                 {item.label}
+                {active && (
+                  <div className="ml-auto w-1.5 h-1.5 bg-brand-600 rounded-full"></div>
+                )}
               </Link>
             )
           })}
         </nav>
-        <div className="mt-auto p-4 border-t border-stone-200">
-          <p className="text-xs text-stone-500 mb-3">Administrador</p>
+        <div className="p-4 border-t border-stone-100 shrink-0">
+          <div className="px-3">
+            <p className="text-[10px] uppercase tracking-wider text-stone-400 font-semibold mb-2">Panel</p>
+            <div className="flex items-center gap-2">
+              <ShieldUser className="w-4 h-4 text-brand-600" />
+              <p className="text-xs font-medium text-stone-800">{profile?.nombre ?? 'Administrador'}</p>
+            </div>
+            <p className="text-[10px] text-stone-400 mt-1">{profile?.rol ?? 'administrador'}</p>
+          </div>
           <Button
             variant="outline"
             size="sm"
+            className="w-full mt-3 justify-start px-3 text-left text-sm text-stone-700"
             onClick={async () => {
               await handleLogout()
               setSidebarOpen(false)
             }}
-            className="w-full justify-start text-sm"
           >
             <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
           </Button>
@@ -78,14 +92,14 @@ export default function AdminLayout() {
       </aside>
 
       {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
+      {sidebarOpen && !window.matchMedia('(min-width: 768px)').matches && (
         <div
-          className="fixed inset-0 z-20 bg-stone-900/60 md:hidden"
+          className="fixed inset-0 z-20 bg-stone-900/70 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
       <button
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-white border border-stone-300 rounded-xl text-stone-700"
+        className="md:hidden fixed top-4 left-4 z-40 p-2.5 bg-white border border-stone-200 rounded-2xl shadow-md text-stone-700"
         onClick={() => setSidebarOpen(true)}
         aria-label="Abrir menú"
       >
@@ -94,23 +108,26 @@ export default function AdminLayout() {
 
       <div className="flex-1 flex flex-col">
         {/* Topbar */}
-        <header className="h-16 border-b border-stone-200 bg-white flex items-center justify-between px-6">
+        <header className="sticky top-0 z-20 h-16 border-b border-stone-100 bg-white/80 backdrop-blur flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-3">
-            <Building className="w-6 h-6 text-brand-600" />
-            <span className="font-bold text-stone-800">Panel de Administración</span>
+            <div className="w-8 h-8 rounded-xl bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm">
+              <Building className="w-4 h-4" />
+            </div>
+            <span className="font-bold text-stone-800 text-sm">Panel de Administración</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-stone-500">
-              {profile?.nombre ?? 'Admin'}
-            </span>
-            <ShieldUser className="w-5 h-5 text-stone-500" />
+            <Avatar src={profile?.nombre ? profile.nombre.charAt(0) : undefined} size="default" />
+            <span className="text-sm font-medium text-stone-700 hidden sm:inline">{profile?.nombre ?? 'Admin'}</span>
+            <ShieldUser className="w-4 h-4 text-stone-400 hidden sm:inline" />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>
     </div>
   )
 }
+
+import Avatar from '../components/ui/avatar'

@@ -41,9 +41,8 @@ export default function AdminPedidos() {
     let mounted = true
     cargar()
 
-    // Suscripción en tiempo real a nuevos pedidos / cambios de estado
+    const hoy = new Date().toISOString().slice(0, 10)
     try {
-      const hoy = new Date().toISOString().slice(0, 10)
       const channel = supabase
         .channel('pedidos-del-dia')
         .on(
@@ -64,7 +63,6 @@ export default function AdminPedidos() {
         supabase.removeChannel(channel)
       }
     } catch (err) {
-      // Realtime puede no estar configurado; el funcionamiento no se interrumpe
       return () => {
         mounted = false
       }
@@ -82,44 +80,52 @@ export default function AdminPedidos() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2">
           <List className="w-5 h-5 text-brand-700" />
-          <h2 className="text-xl font-bold text-stone-800">Pedidos del día</h2>
+          <h2 className="text-2xl font-bold text-stone-900">Pedidos del día</h2>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-stone-600">
-            Total: <span className="font-bold text-stone-800">{formatCurrency(totalDia)}</span>
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-700 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-brand-600"></span>
+            Total: <span className="font-bold">{formatCurrency(totalDia)}</span>
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={cargar}
             disabled={refreshing}
           >
-            {refreshing ? '...' : <><RefreshCw className="w-4 h-4 mr-2" /> Actualizar</>}
+            {refreshing ? '...' : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Actualizar
+              </>
+            )}
           </Button>
         </div>
       </div>
 
       {pedidos.length === 0 ? (
         <div className="p-12 text-center">
-          <Clock className="w-12 h-12 mx-auto text-stone-300 mb-3" />
-          <p className="text-stone-500">No hay pedidos confirmados hoy.</p>
+          <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-4 text-stone-300">
+            <Clock className="w-8 h-8" />
+          </div>
+          <p className="text-stone-500 text-sm">No hay pedidos confirmados hoy.</p>
         </div>
       ) : (
         <Card>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-stone-200">
-                    <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase">Cliente</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase">Hora</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase">Platillos</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase text-right">Total</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-stone-500 uppercase">Estado</th>
+                  <tr className="border-b border-stone-100">
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Cliente</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Hora</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Platillos</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider text-right">Total</th>
+                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -131,9 +137,9 @@ export default function AdminPedidos() {
                     return (
                       <tr
                         key={p.id}
-                        className="border-b border-stone-100 hover:bg-stone-50 transition-colors"
+                        className="border-b border-stone-50 hover:bg-stone-50 transition-colors"
                       >
-                        <td className="px-4 py-3 text-sm text-stone-800 font-medium">
+                        <td className="px-4 py-3 text-sm text-stone-900 font-medium">
                           {p.perfiles?.nombre ?? 'Cliente'}
                         </td>
                         <td className="px-4 py-3 text-sm text-stone-600">
@@ -145,11 +151,11 @@ export default function AdminPedidos() {
                         <td className="px-4 py-3 text-sm text-stone-700 max-w-[200px] truncate" title={resumen}>
                           {resumen}
                         </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-stone-800 text-right">
+                        <td className="px-4 py-3 text-sm font-semibold text-stone-900 text-right">
                           {formatCurrency(p.total_calculado)}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant={(estadoBadge[p.estado] ?? 'default') as 'brand' | 'default' | 'error' | 'success' | 'warning'}>
+                          <Badge variant={estadoBadge[p.estado] as any}>
                             {estadoTexto[p.estado] ?? p.estado}
                           </Badge>
                         </td>
