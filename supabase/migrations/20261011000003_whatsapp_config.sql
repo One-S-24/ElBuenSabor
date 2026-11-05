@@ -139,6 +139,7 @@ as $$
 declare
     v_plantilla record;
     v_contenido text;
+    v_var text;
 begin
     select * into v_plantilla from public.whatsapp_plantillas where id = p_plantilla_id and activa = true;
     if not found then
@@ -148,8 +149,8 @@ begin
     v_contenido := v_plantilla.contenido;
 
     -- Reemplazo simple de variables {{variable}}
-    for key in select json_object_keys(p_variables) loop
-        v_contenido := replace(v_contenido, '{{' || key || '}}', p_variables->>key);
+    for v_var in select json_object_keys(p_variables) loop
+        v_contenido := replace(v_contenido, '{{' || v_var || '}}', p_variables->>v_var);
     end loop;
 
     -- Verificar variables faltantes
