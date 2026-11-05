@@ -15,6 +15,7 @@ export default function AdminLayout() {
   const { profile, logout } = useAuthStore()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = React.useState(true)
+  const isDesktop = window.matchMedia('(min-width: 768px)').matches
 
   const handleLogout = async () => {
     await logout()
@@ -122,7 +123,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className={`flex-1 overflow-y-auto p-4 sm:p-6 ${isDesktop ? 'md:pl-64' : ''}`}>
           <Outlet />
         </main>
       </div>
