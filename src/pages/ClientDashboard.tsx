@@ -3,7 +3,9 @@ import { useAuthStore } from '../stores/useAuthStore'
 import { useOrderStore } from '../stores/useOrderStore'
 import { getCuentaActual } from '../services/accountService'
 import { getMenusHoy, getPlatillosPorMenu } from '../services/adminService'
+import { notificarPedidoConfirmado } from '../services/whatsappService'
 import { formatCurrency } from '../lib/utils'
+import { formatearFechaISO, minutosDelDiaManagua, nombreDiaManagua } from '../lib/date'
 import { CheckCircle2, AlertCircle, Utensils, Coffee, Droplets, Clock, ShieldCheck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import Button from '../components/ui/button'
@@ -12,7 +14,7 @@ import { cn } from '../lib/utils'
 
 export default function ClientDashboard() {
   const { profile } = useAuthStore()
-  const { clearCart } = useOrderStore()
+  const { items, addItem, removeItem, updateCantidad, clearCart, submitOrder } = useOrderStore()
   const clienteId = profile?.id
 
   const [menu, setMenu] = useState<any>(null)
@@ -23,22 +25,13 @@ export default function ClientDashboard() {
   const [confirmLoading, setConfirmLoading] = useState(false)
   const [confirmOk, setConfirmOk] = useState(false)
 
-  const [selectedPrincipalId, setSelectedPrincipalId] = useState<string | null>(null)
-  const [selectedBebidaId, setSelectedBebidaId] = useState<string | null>(null)
-  const [cantidad, setCantidad] = useState(1)
-
-  const ahora = () => {
-    const d = new Date()
-    return d.getHours() * 60 + d.getMinutes()
-  }
-
   const horaLimiteMinutos = useCallback(() => {
     if (!menu?.hora_limite_pedido) return 11 * 60
     const [h, m] = menu.hora_limite_pedido.split(':').map(Number)
     return h * 60 + m
   }, [menu])
 
-  const pedidoCerrado = horaLimiteMinutos() <= ahora()
+  const pedidoCerrado = horaLimiteMinutos() <= minutosDelDiaManagua()
 
   useEffect(() => {
     let mounted = true
@@ -46,7 +39,7 @@ export default function ClientDashboard() {
       try {
         setLoading(true)
         const [menus, cuentaRes] = await Promise.all([
-          getMenusHoy(),
+          getMenusHoy(true),
           clienteId ? getCuentaActual(clienteId) : Promise.resolve({ success: true, cuenta: { total_acumulado: 0 } }),
         ])
         if (mounted) {
@@ -69,8 +62,20 @@ export default function ClientDashboard() {
     }
   }, [clienteId])
 
+  // El carrito global se reinicia al entrar a un menú distinto para no
+  // arrastrar platillos de otra fecha.
+  useEffect(() => {
+    if (menu?.id) clearCart()
+  }, [menu?.id, clearCart])
+
   const principalOptions = platillos.filter((p) => p.tipo === 'principal')
   const bebidaOptions = platillos.filter((p) => p.tipo === 'bebida')
+
+  const principalItem = items.find((i) => principalOptions.some((p) => p.id === i.platilloId))
+  const bebidaItem = items.find((i) => bebidaOptions.some((p) => p.id === i.platilloId))
+  const selectedPrincipalId = principalItem?.platilloId ?? null
+  const selectedBebidaId = bebidaItem?.platilloId ?? null
+  const cantidad = principalItem?.cantidad ?? bebidaItem?.cantidad ?? 1
 
   const btnConfirmContent = confirmOk ? (
     <>
@@ -88,39 +93,76 @@ export default function ClientDashboard() {
     </>
   );
 
+  const seleccionarPrincipal = (p: any) => {
+    if (selectedPrincipalId === p.id) {
+      removeItem(p.id)
+      return
+    }
+    if (selectedPrincipalId) removeItem(selectedPrincipalId)
+    addItem({
+      platilloId: p.id,
+      nombre: p.nombre,
+      precioUnitario: p.precio_unitario,
+      cantidad,
+    })
+  }
+
+  const seleccionarBebida = (p: any) => {
+    if (selectedBebidaId === p.id) {
+      removeItem(p.id)
+      return
+    }
+    if (selectedBebidaId) removeItem(selectedBebidaId)
+    addItem({
+      platilloId: p.id,
+      nombre: p.nombre,
+      precioUnitario: p.precio_unitario,
+      cantidad,
+    })
+  }
+
+  const cambiarCantidad = (delta: number) => {
+    const nueva = Math.max(1, cantidad + delta)
+    items.forEach((item) => updateCantidad(item.platilloId, nueva))
+  }
+
   const handleConfirmar = async () => {
     if (!menu) return
+    if (!clienteId) {
+      setError('Debes iniciar sesión para confirmar tu pedido')
+      return
+    }
     if (!selectedPrincipalId) {
       setError('Selecciona un plato principal')
       return
     }
+
+    // Solo se envían al servidor los platillos del menú vigente.
+    const cartItems = items.filter((item) =>
+      platillos.some((p) => p.id === item.platilloId)
+    )
+    if (cartItems.length === 0) {
+      setError('Tu carrito está vacío')
+      return
+    }
+
     setConfirmLoading(true)
     setError(null)
 
-    const cartItems: any[] = [
-      {
-        platilloId: selectedPrincipalId,
-        nombre: principalOptions.find((p) => p.id === selectedPrincipalId)?.nombre ?? 'Platillo',
-        precioUnitario: principalOptions.find((p) => p.id === selectedPrincipalId)?.precio_unitario ?? 0,
-        cantidad,
-      },
-    ]
-    if (selectedBebidaId) {
-      const b = bebidaOptions.find((p) => p.id === selectedBebidaId)
-      cartItems.push({
-        platilloId: selectedBebidaId,
-        nombre: b?.nombre ?? 'Bebida',
-        precioUnitario: b?.precio_unitario ?? 0,
-        cantidad,
-      })
-    }
-
     try {
-      const { enviarPedido } = await import('../services/orderService')
-      const res = await enviarPedido(clienteId!, menu.id, cartItems)
+      // RNF2: el pedido se envía desde el carrito global de Zustand.
+      const res = await submitOrder(menu.id, clienteId)
       if (res.success) {
         setConfirmOk(true)
         clearCart()
+        // Flujo UWE 3.A.5: notificar al cliente la confirmación. El envío
+        // es asíncrono y nunca bloquea ni revierte el pedido ya confirmado.
+        const pedidoId = typeof res.pedido_id === 'string' ? res.pedido_id : null
+        if (pedidoId) {
+          notificarPedidoConfirmado(pedidoId).catch(() => {
+            // Si WhatsApp no está disponible, el pedido sigue confirmado.
+          })
+        }
         setTimeout(() => setConfirmOk(false), 4000)
       } else {
         setError(res.error || 'No se pudo confirmar el pedido')
@@ -134,8 +176,8 @@ export default function ClientDashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
+      <div className="flex h-[60svh] items-center justify-center bg-brand-50">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-leaf-600"></div>
       </div>
     )
   }
@@ -156,42 +198,40 @@ export default function ClientDashboard() {
     )
   }
 
-  const totalSeleccionado =
-    principalOptions.find((p) => p.id === selectedPrincipalId)?.precio_unitario * cantidad +
-    (selectedBebidaId
-      ? bebidaOptions.find((p) => p.id === selectedBebidaId)?.precio_unitario * cantidad
-      : 0)
+  const totalSeleccionado = items
+    .filter((item) => platillos.some((p) => p.id === item.platilloId))
+    .reduce((total, item) => total + item.precioUnitario * item.cantidad, 0)
 
-  const nombreDia = new Date().toLocaleDateString('es-NI', { weekday: 'long' })
+  const nombreDia = nombreDiaManagua()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header de bienvenida */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-leaf-900 font-serif">Hola, {profile?.nombre ?? ''}</h1>
-          <p className="text-stone-600 text-sm">¿Qué vas a pedir hoy?</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="break-words text-leaf-900 font-serif">Hola, {profile?.nombre ?? ''}</h1>
+          <p className="text-sm text-stone-600">¿Qué vas a pedir hoy?</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Badge variant={pedidoCerrado ? 'error' : 'success'}>
             {pedidoCerrado ? 'Cerrado' : 'Disponible'}
           </Badge>
-          <ShieldCheck className={`w-4 h-4 ${pedidoCerrado ? 'text-rose-500' : 'text-leaf-500'}`} />
+          <ShieldCheck className={`h-4 w-4 ${pedidoCerrado ? 'text-rose-500' : 'text-leaf-500'}`} />
         </div>
       </div>
 
       {/* Saldo */}
       <Card variant="bordered" className="border-leaf-200 bg-leaf-50/40">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-semibold tracking-wider text-leaf-700 uppercase">Saldo quincenal actual</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-leaf-700">Saldo quincenal actual</p>
               <p className="text-[10px] text-stone-500">
-                {cuenta ? `${new Date(cuenta.fecha_inicio).toLocaleDateString('es-NI')} al ${new Date(cuenta.fecha_fin).toLocaleDateString('es-NI')}` : ''}
+                {cuenta ? `${formatearFechaISO(cuenta.fecha_inicio)} al ${formatearFechaISO(cuenta.fecha_fin)}` : ''}
               </p>
             </div>
-            <div className="text-right">
-              <span className="text-3xl font-bold text-stone-900 font-serif">
+            <div className="sm:text-right">
+              <span className="font-serif text-2xl font-bold text-stone-900 sm:text-3xl">
                 {cuenta ? formatCurrency(cuenta.total_acumulado) : formatCurrency(0)}
               </span>
             </div>
@@ -201,12 +241,12 @@ export default function ClientDashboard() {
 
       {/* Menú del día */}
       <Card variant="raised">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+          <div className="min-w-0">
             <CardTitle className="text-leaf-900">Menú de hoy ({nombreDia})</CardTitle>
             <p className="text-xs text-stone-500">Selecciona tus platillos y bebidas.</p>
           </div>
-          <Badge variant={pedidoCerrado ? 'error' : 'brand'}>
+          <Badge variant={pedidoCerrado ? 'error' : 'brand'} className="shrink-0">
             {pedidoCerrado ? 'Cerrado' : 'Disponible'}
           </Badge>
         </CardHeader>
@@ -223,11 +263,11 @@ export default function ClientDashboard() {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => setSelectedPrincipalId(p.id)}
+                    onClick={() => seleccionarPrincipal(p)}
                     className={cn(
                       'flex flex-col items-center justify-between p-3 rounded-lg border transition-all duration-200',
                       seleccionado
-                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf/20'
+                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf-500/20'
                         : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
                     )}
                   >
@@ -235,7 +275,7 @@ export default function ClientDashboard() {
                       <input
                         type="radio"
                         checked={seleccionado}
-                        onChange={() => setSelectedPrincipalId(p.id)}
+                        onChange={() => seleccionarPrincipal(p)}
                         className="w-4 h-4 text-leaf-600 accent-leaf-600"
                         readOnly
                       />
@@ -262,11 +302,11 @@ export default function ClientDashboard() {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => setSelectedBebidaId(p.id)}
+                    onClick={() => seleccionarBebida(p)}
                     className={cn(
                       'flex flex-col items-center justify-between p-3 rounded-lg border transition-all duration-200',
                       seleccionado
-                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf/20'
+                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf-500/20'
                         : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
                     )}
                   >
@@ -274,7 +314,7 @@ export default function ClientDashboard() {
                       <input
                         type="radio"
                         checked={seleccionado}
-                        onChange={() => setSelectedBebidaId(p.id)}
+                        onChange={() => seleccionarBebida(p)}
                         className="w-4 h-4 text-leaf-600 accent-leaf-600"
                         readOnly
                       />
@@ -295,12 +335,12 @@ export default function ClientDashboard() {
               <Droplets className="w-4 h-4 text-stone-400" />
               <span className="font-semibold text-stone-800 text-sm">Cantidad de porciones</span>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => setCantidad((c) => Math.max(1, c - 1))}>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="outline" size="sm" className="h-10 w-10 text-lg" onClick={() => cambiarCantidad(-1)}>
                 −
               </Button>
               <span className="w-10 text-center font-bold text-stone-800">{cantidad}</span>
-              <Button variant="outline" size="sm" onClick={() => setCantidad((c) => c + 1)}>
+              <Button variant="outline" size="sm" className="h-10 w-10 text-lg" onClick={() => cambiarCantidad(1)}>
                 +
               </Button>
             </div>
@@ -326,19 +366,19 @@ export default function ClientDashboard() {
 
       {/* Resumen y acción */}
       <Card variant="raised">
-        <CardContent className="p-6">
-          <div className="flex justify-between items-baseline mb-6">
+        <CardContent className="p-4 sm:p-6">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 sm:mb-6">
             <div>
-              <p className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Total estimado</p>
-              <span className="text-2xl font-bold text-stone-900 font-serif">{formatCurrency(totalSeleccionado)}</span>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Total estimado</p>
+              <span className="font-serif text-2xl font-bold text-stone-900">{formatCurrency(totalSeleccionado)}</span>
             </div>
           </div>
-          <p className="text-[10px] text-stone-500 mb-6">
+          <p className="mb-4 text-[10px] text-stone-500 sm:mb-6">
             Los pedidos se confirman antes de la hora límite de corte.
           </p>
           <Button
             variant="ember"
-            className="w-full py-4 text-lg font-bold shadow-lg shadow-ember/30 hover:shadow-ember/50"
+            className="w-full py-4 text-base font-bold shadow-lg shadow-ember-500/30 hover:shadow-ember-500/50 sm:text-lg"
             disabled={pedidoCerrado || !selectedPrincipalId || confirmLoading}
             onClick={handleConfirmar}
           >

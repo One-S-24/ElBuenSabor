@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { getPedidosDelDia } from '../services/adminService'
 import { formatCurrency } from '../lib/utils'
+import { formatearHoraManagua } from '../lib/date'
 import { List, RefreshCw, Clock } from 'lucide-react'
 import { Card, CardContent } from '../components/ui/card'
 import Button from '../components/ui/button'
@@ -41,7 +42,6 @@ export default function AdminPedidos() {
     let mounted = true
     cargar()
 
-    const hoy = new Date().toISOString().slice(0, 10)
     try {
       const channel = supabase
         .channel('pedidos-del-dia')
@@ -51,7 +51,6 @@ export default function AdminPedidos() {
             event: '*',
             schema: 'public',
             table: 'pedidos',
-            filter: `fecha_hora=gte.${hoy}T00:00:00Z`,
           },
           () => {
             if (mounted) cargar()
@@ -73,22 +72,22 @@ export default function AdminPedidos() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
+      <div className="flex h-[60svh] items-center justify-center bg-brand-50">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-leaf-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <List className="w-5 h-5 text-leaf-700" />
-          <h2 className="text-leaf-900 font-serif">Pedidos del día</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
+          <List className="h-5 w-5 shrink-0 text-leaf-700" />
+          <h2 className="min-w-0 truncate text-leaf-900 font-serif">Pedidos del día</h2>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-leaf-50 text-leaf-700 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-leaf-600"></span>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg bg-leaf-50 px-3 py-1.5 text-xs font-semibold text-leaf-700">
+            <span className="h-2 w-2 rounded-full bg-leaf-600"></span>
             Total: <span className="font-bold">{formatCurrency(totalDia)}</span>
           </div>
           <Button
@@ -99,7 +98,7 @@ export default function AdminPedidos() {
           >
             {refreshing ? '...' : (
               <>
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Actualizar
               </>
             )}
@@ -108,65 +107,104 @@ export default function AdminPedidos() {
       </div>
 
       {pedidos.length === 0 ? (
-        <div className="p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-4 text-stone-300">
-            <Clock className="w-8 h-8" />
+        <div className="p-8 text-center sm:p-12">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-stone-100 text-stone-300">
+            <Clock className="h-8 w-8" />
           </div>
-          <p className="text-stone-500 text-sm">No hay pedidos confirmados hoy.</p>
+          <p className="text-sm text-stone-500">No hay pedidos confirmados hoy.</p>
         </div>
       ) : (
-        <Card variant="bordered">
-          <CardContent className="p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-stone-200">
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Cliente</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Hora</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Platillos</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider text-right">Total</th>
-                    <th className="px-4 py-3 text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pedidos.map((p) => {
-                    const detalles = p.detalle_pedidos ?? []
-                    const resumen = detalles
-                      .map((d: any) => `${d.cantidad}x ${d.platillos?.nombre ?? 'Platillo'}`)
-                      .join(', ')
-                    return (
-                      <tr
-                        key={p.id}
-                        className="border-b border-stone-50 hover:bg-stone-50 transition-colors"
-                      >
-                        <td className="px-4 py-3 text-sm text-stone-900 font-medium">
+        <>
+          {/* Vista móvil */}
+          <div className="space-y-3 md:hidden">
+            {pedidos.map((p) => {
+              const detalles = p.detalle_pedidos ?? []
+              const resumen = detalles
+                .map((d: any) => `${d.cantidad}x ${d.platillos?.nombre ?? 'Platillo'}`)
+                .join(', ')
+              return (
+                <Card key={p.id} className="border-stone-100">
+                  <CardContent className="space-y-2 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-stone-900">
                           {p.perfiles?.nombre ?? 'Cliente'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-stone-600">
-                          {new Date(p.fecha_hora).toLocaleTimeString('es-NI', {
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          {formatearHoraManagua(p.fecha_hora, {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-stone-700 max-w-[200px] truncate" title={resumen}>
-                          {resumen}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-stone-900 text-right">
-                          {formatCurrency(p.total_calculado)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={estadoBadge[p.estado] as any}>
-                            {estadoTexto[p.estado] ?? p.estado}
-                          </Badge>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                        </p>
+                      </div>
+                      <Badge variant={estadoBadge[p.estado] as any}>
+                        {estadoTexto[p.estado] ?? p.estado}
+                      </Badge>
+                    </div>
+                    <p className="break-words text-sm text-stone-700">{resumen || 'Sin platillos'}</p>
+                    <p className="text-right text-sm font-bold text-stone-900">
+                      {formatCurrency(p.total_calculado)}
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+
+          {/* Vista de escritorio */}
+          <Card variant="bordered" className="hidden md:block">
+            <CardContent className="overflow-hidden p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-stone-200">
+                      <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Cliente</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Hora</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Platillos</th>
+                      <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-stone-500">Total</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pedidos.map((p) => {
+                      const detalles = p.detalle_pedidos ?? []
+                      const resumen = detalles
+                        .map((d: any) => `${d.cantidad}x ${d.platillos?.nombre ?? 'Platillo'}`)
+                        .join(', ')
+                      return (
+                        <tr
+                          key={p.id}
+                          className="border-b border-stone-50 transition-colors hover:bg-stone-50"
+                        >
+                          <td className="px-4 py-3 text-sm font-medium text-stone-900">
+                            {p.perfiles?.nombre ?? 'Cliente'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-stone-600">
+                            {formatearHoraManagua(p.fecha_hora, {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </td>
+                          <td className="max-w-[260px] truncate px-4 py-3 text-sm text-stone-700" title={resumen}>
+                            {resumen}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-semibold text-stone-900">
+                            {formatCurrency(p.total_calculado)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={estadoBadge[p.estado] as any}>
+                              {estadoTexto[p.estado] ?? p.estado}
+                            </Badge>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   )

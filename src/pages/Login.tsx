@@ -29,11 +29,11 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-leaf-50 px-4">
-      <div className="relative w-full max-w-md z-10">
-        <Card className="shadow-xl shadow-leaf/10 border border-leaf-100/50 raised">
+    <div className="flex min-h-svh items-center justify-center bg-leaf-50 px-4 py-6 sm:py-10">
+      <div className="relative z-10 w-full max-w-md">
+        <Card className="raised border border-leaf-100/50 shadow-xl shadow-leaf-500/10">
           <CardHeader className="text-center pb-8">
-            <div className="w-12 h-12 rounded-md bg-leaf-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-leaf/40">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-leaf-600 shadow-lg shadow-leaf-500/40">
               <Building className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-leaf-900 font-serif">El Buen Sabor</CardTitle>

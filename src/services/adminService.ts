@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabaseClient'
+import { finDiaManaguaUTC, hoyManaguaISO, inicioDiaManaguaUTC } from '../lib/date'
+import { enviarNotificacionWhatsApp as enviarNotificacionOpenWA } from './whatsappService'
 import type {
   MenuDiario,
   Platillo,
@@ -8,12 +10,19 @@ import type {
 
 /* ---------- Menú diario ---------- */
 
-export const getMenusHoy = async (): Promise<MenuDiario[]> => {
-  const hoy = new Date().toISOString().slice(0, 10)
-  const { data, error } = await supabase
+/**
+ * Menú de hoy según la fecha local del negocio (America/Managua).
+ * `soloActivos` permite que el cliente vea únicamente menús publicados.
+ */
+export const getMenusHoy = async (soloActivos = false): Promise<MenuDiario[]> => {
+  const hoy = hoyManaguaISO()
+  let query = supabase
     .from('menus_diarios')
     .select('*')
     .eq('fecha', hoy)
+  if (soloActivos) query = query.eq('activo', true)
+
+  const { data, error } = await query
   if (error) throw error
   return (data ?? []) as MenuDiario[]
 }
@@ -103,8 +112,8 @@ export const getPedidosEnRango = async (
     .from('pedidos')
     .select('*, perfiles( nombre ), detalle_pedidos( *, platillos( nombre, precio_unitario, tipo ) )')
     .eq('cliente_id', clienteId)
-    .gte('fecha_hora', `${fechaInicio}T00:00:00Z`)
-    .lt('fecha_hora', `${fechaFin}T23:59:59Z`)
+    .gte('fecha_hora', inicioDiaManaguaUTC(fechaInicio))
+    .lt('fecha_hora', finDiaManaguaUTC(fechaFin))
     .order('fecha_hora', { ascending: false })
   if (error) throw error
   return (data ?? []) as unknown as Pedido[]
@@ -117,8 +126,8 @@ export const getPedidosQuincena = async (
   const { data, error } = await supabase
     .from('pedidos')
     .select('*, perfiles( nombre ), detalle_pedidos( *, platillos( nombre ) )')
-    .gte('fecha_hora', `${fechaInicio}T00:00:00Z`)
-    .lt('fecha_hora', `${fechaFin}T23:59:59Z`)
+    .gte('fecha_hora', inicioDiaManaguaUTC(fechaInicio))
+    .lt('fecha_hora', finDiaManaguaUTC(fechaFin))
     .eq('estado', 'CONFIRMADO')
     .order('fecha_hora', { ascending: false })
   if (error) throw error
@@ -126,12 +135,12 @@ export const getPedidosQuincena = async (
 }
 
 export const getPedidosDelDia = async (): Promise<Pedido[]> => {
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyManaguaISO()
   const { data, error } = await supabase
     .from('pedidos')
     .select('*, perfiles( nombre ), detalle_pedidos( *, platillos( nombre, precio_unitario, tipo ) )')
-    .gte('fecha_hora', `${hoy}T00:00:00Z`)
-    .lt('fecha_hora', `${hoy}T23:59:59Z`)
+    .gte('fecha_hora', inicioDiaManaguaUTC(hoy))
+    .lt('fecha_hora', finDiaManaguaUTC(hoy))
     .order('fecha_hora', { ascending: false })
   if (error) throw error
   return (data ?? []) as unknown as Pedido[]
@@ -190,6 +199,10 @@ export const getPlantillas = async (): Promise<any[]> => {
   return data ?? []
 }
 
+/**
+ * Envía una notificación real a través de la Edge Function whatsapp,
+ * que a su vez usa la API de OpenWA. La API key nunca sale del servidor.
+ */
 export const enviarNotificacionWhatsApp = async (
   clienteId: string,
   plantillaId: string,
@@ -197,13 +210,19 @@ export const enviarNotificacionWhatsApp = async (
   configId?: string,
   tipoNotificacion = 'recordatorio_pago'
 ): Promise<RpcResult> => {
-  const { data, error } = await supabase.rpc('enviar_notificacion_whatsapp', {
-    p_cliente_id: clienteId,
-    p_plantilla_id: plantillaId,
-    p_variables: variables,
-    p_config_id: configId ?? null,
-    p_tipo_notificacion: tipoNotificacion,
-  })
-  if (error) return { success: false, error: error.message }
-  return data as RpcResult
+  try {
+    const resultado = await enviarNotificacionOpenWA({
+      cliente_id: clienteId,
+      plantilla_id: plantillaId,
+      variables,
+      config_id: configId ?? null,
+      tipo_notificacion: tipoNotificacion,
+    })
+    return { ...resultado, success: resultado.success !== false } as RpcResult
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al enviar la notificación',
+    }
+  }
 }

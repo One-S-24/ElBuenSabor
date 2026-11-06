@@ -160,20 +160,20 @@ export default function AdminMenu() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-leaf-600"></div>
+      <div className="flex h-[60svh] items-center justify-center bg-brand-50">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-leaf-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Utensils className="w-5 h-5 text-leaf-700" />
-          <h2 className="text-leaf-900 font-serif">Gestión de menú diario</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
+          <Utensils className="h-5 w-5 shrink-0 text-leaf-700" />
+          <h2 className="min-w-0 truncate text-leaf-900 font-serif">Gestión de menú diario</h2>
         </div>
-        <Button variant="outline" onClick={() => navigate('/admin/pedidos')}>
+        <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate('/admin/pedidos')}>
           Ver pedidos del día
         </Button>
       </div>
@@ -211,7 +211,7 @@ export default function AdminMenu() {
               />
             </button>
           </div>
-          <Button variant="leaf" onClick={guardarMenu} disabled={saving} className="col-span-1 sm:col-span-1 md:col-span-2">
+          <Button variant="leaf" onClick={guardarMenu} disabled={saving} className="col-span-1 w-full sm:col-span-2 lg:col-span-3">
             {btnGuardarContent}
           </Button>
         </CardContent>
@@ -219,9 +219,9 @@ export default function AdminMenu() {
 
       {/* Platillos */}
       <Card variant="bordered">
-        <CardHeader className="flex items-center justify-between">
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-leaf-900 font-serif">Platillos del menú</CardTitle>
-          <span className="text-[11px] text-stone-400 font-semibold tracking-wider uppercase">{platillos.length} platillo(s)</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-400">{platillos.length} platillo(s)</span>
         </CardHeader>
         <CardContent className="space-y-4">
           {platillos.length === 0 ? (
@@ -259,26 +259,27 @@ export default function AdminMenu() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-stone-900 text-sm truncate">{p.nombre}</span>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                        <div className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-stone-900">{p.nombre}</span>
                           {p.descripcion && (
-                            <span className="text-[11px] text-stone-500 block mt-0.5">{p.descripcion}</span>
+                            <span className="mt-0.5 block break-words text-[11px] text-stone-500">{p.descripcion}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-leaf-700 font-bold text-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-leaf-700">
                             {formatCurrency(p.precio_unitario)}
                           </span>
-                          <Badge variant="default" className="text-[10px] px-2 py-0.5">
+                          <Badge variant="default" className="px-2 py-0.5 text-[10px]">
                             {p.tipo}
                           </Badge>
                           <span className="text-[11px] text-stone-400">Stock: {p.porciones_disponibles}</span>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-2 sm:gap-1">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="flex-1 sm:flex-none"
                             onClick={() => {
                               setEditValues({ ...editValues, [p.id]: { ...p } })
                               setEditingId(p.id)
@@ -286,8 +287,13 @@ export default function AdminMenu() {
                           >
                             Editar
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => borrarPlatillo(p.id)}>
-                            <Trash2 className="w-3 h-3" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            aria-label={`Eliminar ${p.nombre}`}
+                            onClick={() => borrarPlatillo(p.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
@@ -302,7 +308,7 @@ export default function AdminMenu() {
             <h3 className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
               <Plus className="w-4 h-4 text-leaf-600" /> Agregar platillo
             </h3>
-            <form onSubmit={handleNuevoPlatillo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <form onSubmit={handleNuevoPlatillo} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
               <Input
                 placeholder="Nombre"
                 value={nuevo.nombre}
@@ -327,7 +333,7 @@ export default function AdminMenu() {
                 <option value="bebida">Bebida</option>
                 <option value="adicional">Adicional</option>
               </select>
-              <Button variant="leaf" type="submit" className="col-span-1 sm:col-span-1 lg:col-span-2">
+              <Button variant="leaf" type="submit" className="w-full sm:col-span-2 lg:col-span-2">
                 Agregar
               </Button>
             </form>

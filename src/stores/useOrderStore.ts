@@ -1,12 +1,13 @@
 import { create } from 'zustand'
-import type { CartItem } from '../lib/types'
+import type { CartItem, RpcResult } from '../lib/types'
 
 export interface OrderState {
   items: CartItem[]
   addItem: (item: CartItem) => void
   removeItem: (platilloId: string) => void
+  updateCantidad: (platilloId: string, cantidad: number) => void
   clearCart: () => void
-  submitOrder: (menuId: string, clienteId: string) => Promise<{ success: boolean; error?: string }>
+  submitOrder: (menuId: string, clienteId: string) => Promise<RpcResult>
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -29,6 +30,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   removeItem: (platilloId) =>
     set((state) => ({ items: state.items.filter((i) => i.platilloId !== platilloId) })),
+
+  updateCantidad: (platilloId, cantidad) =>
+    set((state) => ({
+      items: state.items.map((i) =>
+        i.platilloId === platilloId
+          ? { ...i, cantidad: Math.max(1, Math.trunc(cantidad)) }
+          : i
+      ),
+    })),
 
   clearCart: () => set({ items: [] }),
 

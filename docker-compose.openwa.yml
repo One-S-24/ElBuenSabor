@@ -1,0 +1,69 @@
+# ============================================================
+# OpenWA local - API Gateway de WhatsApp para "El Buen Sabor"
+# ============================================================
+# Uso:
+#   docker compose -f docker-compose.openwa.yml up -d
+#   docker exec openwa-api cat /app/data/.api-key
+#
+# Dashboard: http://localhost:2785
+# API:       http://localhost:2785/api
+# Swagger:   http://localhost:2785/api/docs
+#
+# NOTA: el puerto queda publicado en todas las interfaces para que
+# el contenedor de Supabase Edge Functions pueda alcanzarlo mediante
+# http://host.docker.internal:2785. No expongas este puerto a Internet
+# sin un reverse proxy con TLS y autenticación.
+
+services:
+  openwa:
+    image: ghcr.io/rmyndharis/openwa:latest
+    container_name: openwa-api
+    restart: unless-stopped
+    ports:
+      - "2785:2785"
+    environment:
+      NODE_ENV: development
+      PORT: "2785"
+      HOME: /tmp
+      XDG_CONFIG_HOME: /tmp/.config
+      XDG_CACHE_HOME: /tmp/.cache
+
+      # Persistencia local (SQLite + sesiones + media)
+      DATABASE_TYPE: sqlite
+      DATABASE_NAME: /app/data/openwa.sqlite
+      DATABASE_SYNCHRONIZE: "true"
+      SESSION_DATA_PATH: /app/data/sessions
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/data/media
+
+      # Motor de WhatsApp
+      ENGINE_TYPE: whatsapp-web.js
+      PUPPETEER_HEADLESS: "true"
+      PUPPETEER_ARGS: "--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu"
+
+      # Reinicia sesiones autenticadas al arrancar
+      AUTO_START_SESSIONS: "true"
+
+      # Dashboard + docs
+      SERVE_DASHBOARD: "true"
+      ENABLE_SWAGGER: "true"
+
+      # Protección de envíos (el panel también aplica pausas)
+      SEND_PACING_ENABLED: "true"
+    volumes:
+      - openwa-data:/app/data
+    security_opt:
+      - "no-new-privileges:true"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:2785/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  openwa-data:

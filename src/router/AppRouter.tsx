@@ -19,6 +19,7 @@ const MiCuenta = React.lazy(() => import('../pages/MiCuenta'))
 const AdminMenu = React.lazy(() => import('../pages/AdminMenu'))
 const AdminPedidos = React.lazy(() => import('../pages/AdminPedidos'))
 const AdminCobranza = React.lazy(() => import('../pages/AdminCobranza'))
+const AdminWhatsApp = React.lazy(() => import('../pages/AdminWhatsApp'))
 
 const ProtectedClientRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, isLoading } = useAuthStore()
@@ -26,8 +27,8 @@ const ProtectedClientRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+      <div className="flex min-h-svh items-center justify-center bg-brand-50">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-brand-600"></div>
       </div>
     )
   }
@@ -49,8 +50,8 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600"></div>
+      <div className="flex min-h-svh items-center justify-center bg-brand-50">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-brand-600"></div>
       </div>
     )
   }
@@ -137,6 +138,7 @@ export default function AppRouter() {
           <Route path="menu" element={<AdminMenu />} />
           <Route path="pedidos" element={<AdminPedidos />} />
           <Route path="cobranza" element={<AdminCobranza />} />
+          <Route path="whatsapp" element={<AdminWhatsApp />} />
           <Route index element={<Navigate to="menu" replace />} />
         </Route>
 
