@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuthStore } from '../stores/useAuthStore'
 import ClientLayout from '../layouts/ClientLayout'
 import AdminLayout from '../layouts/AdminLayout'
+import { AuthRouteSkeleton, FullScreenLoader } from '../components/ui/skeleton'
 
 /* Páginas (carga perezosa) */
 const Login = React.lazy(() => import('../pages/Login'))
@@ -26,11 +27,7 @@ const ProtectedClientRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation()
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-brand-50">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-brand-600"></div>
-      </div>
-    )
+    return <FullScreenLoader label="Verificando sesión" />
   }
 
   if (!user || !profile) {
@@ -49,11 +46,7 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation()
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-brand-50">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-brand-600"></div>
-      </div>
-    )
+    return <FullScreenLoader label="Verificando sesión" />
   }
 
   if (!user || !profile) {
@@ -108,7 +101,8 @@ export default function AppRouter() {
 
   return (
     <BrowserRouter>
-      <Routes>
+      <React.Suspense fallback={<AuthRouteSkeleton />}>
+        <Routes>
         {/* Auth */}
         <Route path="/login" element={<Login />} />
 
@@ -144,7 +138,8 @@ export default function AppRouter() {
 
         {/* Redirección raíz según rol cuando no hay layout envuelto */}
         <Route path="/" element={<Navigate to={profile?.rol === 'administrador' ? '/admin/menu' : '/'} replace />} />
-      </Routes>
+        </Routes>
+      </React.Suspense>
     </BrowserRouter>
   )
 }

@@ -5,11 +5,23 @@ import { getCuentaActual } from '../services/accountService'
 import { getMenusHoy, getPlatillosPorMenu } from '../services/adminService'
 import { notificarPedidoConfirmado } from '../services/whatsappService'
 import { formatCurrency } from '../lib/utils'
-import { formatearFechaISO, minutosDelDiaManagua, nombreDiaManagua } from '../lib/date'
-import { CheckCircle2, AlertCircle, Utensils, Coffee, Droplets, Clock, ShieldCheck } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
+import { formatearFechaISO, formatearHora12, hoyManaguaISO, minutosDelDiaManagua, nombreDiaManagua } from '../lib/date'
+import {
+  AlertCircle,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  Clock,
+  Coffee,
+  Minus,
+  Plus,
+  ShieldCheck,
+  UtensilsCrossed,
+} from 'lucide-react'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card'
 import Button from '../components/ui/button'
 import Badge from '../components/ui/badge'
+import { ClientRouteSkeleton } from '../components/ui/skeleton'
 import { cn } from '../lib/utils'
 
 export default function ClientDashboard() {
@@ -40,7 +52,9 @@ export default function ClientDashboard() {
         setLoading(true)
         const [menus, cuentaRes] = await Promise.all([
           getMenusHoy(true),
-          clienteId ? getCuentaActual(clienteId) : Promise.resolve({ success: true, cuenta: { total_acumulado: 0 } }),
+          clienteId
+            ? getCuentaActual(clienteId)
+            : Promise.resolve({ success: true, cuenta: { total_acumulado: 0 } }),
         ])
         if (mounted) {
           setMenu(menus[0] ?? null)
@@ -79,19 +93,19 @@ export default function ClientDashboard() {
 
   const btnConfirmContent = confirmOk ? (
     <>
-      <CheckCircle2 className="w-5 h-5 mr-2" /> ¡Pedido confirmado!
+      <CheckCircle2 className="h-5 w-5" /> ¡Pedido confirmado!
     </>
   ) : confirmLoading ? (
     <>
-      <Clock className="w-4 h-4 animate-spin mr-2" />
+      <Clock className="h-4 w-4 animate-spin" />
       Confirmando...
     </>
   ) : (
     <>
-      <ShieldCheck className="w-4 h-4 mr-2" />
+      <ShieldCheck className="h-4 w-4" />
       Confirmar pedido diario
     </>
-  );
+  )
 
   const seleccionarPrincipal = (p: any) => {
     if (selectedPrincipalId === p.id) {
@@ -138,9 +152,7 @@ export default function ClientDashboard() {
     }
 
     // Solo se envían al servidor los platillos del menú vigente.
-    const cartItems = items.filter((item) =>
-      platillos.some((p) => p.id === item.platilloId)
-    )
+    const cartItems = items.filter((item) => platillos.some((p) => p.id === item.platilloId))
     if (cartItems.length === 0) {
       setError('Tu carrito está vacío')
       return
@@ -175,23 +187,21 @@ export default function ClientDashboard() {
   }
 
   if (loading) {
-    return (
-      <div className="flex h-[60svh] items-center justify-center bg-brand-50">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-leaf-600"></div>
-      </div>
-    )
+    return <ClientRouteSkeleton />
   }
 
   if (!menu) {
     return (
-      <div className="p-6 text-center">
-        <Card className="max-w-sm mx-auto border-0 shadow-xl raised">
-          <CardContent className="text-center py-10">
-            <Clock className="w-12 h-12 mx-auto text-stone-300 mb-4" />
+      <div className="py-10">
+        <Card className="mx-auto max-w-sm text-center">
+          <CardContent className="flex flex-col items-center py-10">
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-stone-100 text-stone-300">
+              <Clock className="h-8 w-8" />
+            </span>
             <CardTitle>Sin menú hoy</CardTitle>
-            <CardDescription>
+            <p className="mt-2 text-sm leading-relaxed text-stone-500">
               El menú del día aún no se ha publicado. Vuelve más tarde.
-            </CardDescription>
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -202,195 +212,328 @@ export default function ClientDashboard() {
     .filter((item) => platillos.some((p) => p.id === item.platilloId))
     .reduce((total, item) => total + item.precioUnitario * item.cantidad, 0)
 
+  const itemsDelMenu = items.filter((item) => platillos.some((p) => p.id === item.platilloId))
   const nombreDia = nombreDiaManagua()
+  const fechaHoy = formatearFechaISO(hoyManaguaISO())
+  const horaLimite = menu.hora_limite_pedido ?? '11:00'
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header de bienvenida */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="break-words text-leaf-900 font-serif">Hola, {profile?.nombre ?? ''}</h1>
-          <p className="text-sm text-stone-600">¿Qué vas a pedir hoy?</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Badge variant={pedidoCerrado ? 'error' : 'success'}>
-            {pedidoCerrado ? 'Cerrado' : 'Disponible'}
-          </Badge>
-          <ShieldCheck className={`h-4 w-4 ${pedidoCerrado ? 'text-rose-500' : 'text-leaf-500'}`} />
-        </div>
-      </div>
+    <div className="space-y-5 sm:space-y-6">
+      {/* Hero de bienvenida */}
+      <Card variant="ink" className="relative overflow-hidden">
+        <div className="dot-grid pointer-events-none absolute inset-0 opacity-25" aria-hidden="true" />
+        <div className="relative p-5 sm:p-7">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-leaf-200/80">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {nombreDia} · {fechaHoy}
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ring-1',
+                pedidoCerrado
+                  ? 'bg-ember-500/20 text-ember-200 ring-ember-300/30'
+                  : 'bg-leaf-400/15 text-leaf-100 ring-leaf-300/30',
+              )}
+            >
+              <span className={cn('h-1.5 w-1.5 rounded-full', pedidoCerrado ? 'bg-ember-400' : 'bg-leaf-300')} />
+              {pedidoCerrado ? 'Pedidos cerrados' : 'Pedidos abiertos'}
+            </span>
+          </div>
 
-      {/* Saldo */}
-      <Card variant="bordered" className="border-leaf-200 bg-leaf-50/40">
-        <CardHeader>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="mt-5 text-white">Hola, {(profile?.nombre ?? '').split(' ')[0] || 'comensal'}</h1>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-leaf-100/70">
+            Arma tu almuerzo de hoy. Elige un plato principal y, si quieres, una bebida.
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-leaf-700">Saldo quincenal actual</p>
-              <p className="text-[10px] text-stone-500">
-                {cuenta ? `${formatearFechaISO(cuenta.fecha_inicio)} al ${formatearFechaISO(cuenta.fecha_fin)}` : ''}
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-leaf-300/80">
+                Saldo quincenal actual
+              </p>
+              <p className="mt-1 font-serif text-3xl font-bold leading-none text-white">
+                {formatCurrency(cuenta?.total_acumulado ?? 0)}
+              </p>
+              <p className="mt-1.5 text-[11px] text-leaf-100/55">
+                {cuenta
+                  ? `${formatearFechaISO(cuenta.fecha_inicio)} al ${formatearFechaISO(cuenta.fecha_fin)}`
+                  : 'Sin cuenta activa'}
               </p>
             </div>
-            <div className="sm:text-right">
-              <span className="font-serif text-2xl font-bold text-stone-900 sm:text-3xl">
-                {cuenta ? formatCurrency(cuenta.total_acumulado) : formatCurrency(0)}
-              </span>
+            <div className="text-right">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-leaf-300/80">
+                Hora límite
+              </p>
+              <p className="mt-1 font-serif text-xl font-semibold text-white">{formatearHora12(horaLimite)}</p>
+              <p className="mt-1 text-[11px] text-leaf-100/55">Para pedidos del día</p>
             </div>
           </div>
-        </CardHeader>
+        </div>
       </Card>
 
-      {/* Menú del día */}
-      <Card variant="raised">
-        <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-          <div className="min-w-0">
-            <CardTitle className="text-leaf-900">Menú de hoy ({nombreDia})</CardTitle>
-            <p className="text-xs text-stone-500">Selecciona tus platillos y bebidas.</p>
-          </div>
-          <Badge variant={pedidoCerrado ? 'error' : 'brand'} className="shrink-0">
-            {pedidoCerrado ? 'Cerrado' : 'Disponible'}
-          </Badge>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Plato principal */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Utensils className="w-4 h-4 text-stone-400" />
-              <span className="font-semibold text-stone-800 text-sm">Plato principal</span>
+      <div className="grid items-start gap-5 sm:gap-6 lg:grid-cols-[1.55fr_1fr]">
+        {/* Menú del día */}
+        <Card variant="raised">
+          <CardHeader className="flex-row items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="eyebrow">Menú del día</p>
+              <CardTitle>Elige tu almuerzo</CardTitle>
+              <p className="mt-1.5 text-sm text-stone-500">
+                Toca un plato para seleccionarlo. Puedes cambiar tu elección.
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {principalOptions.map((p) => {
-                const seleccionado = selectedPrincipalId === p.id
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => seleccionarPrincipal(p)}
-                    className={cn(
-                      'flex flex-col items-center justify-between p-3 rounded-lg border transition-all duration-200',
-                      seleccionado
-                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf-500/20'
-                        : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
-                    )}
-                  >
-                    <div className="flex items-center gap-2 w-full justify-center">
-                      <input
-                        type="radio"
-                        checked={seleccionado}
-                        onChange={() => seleccionarPrincipal(p)}
-                        className="w-4 h-4 text-leaf-600 accent-leaf-600"
-                        readOnly
-                      />
-                      <span className="text-sm font-medium text-stone-800 leading-tight">{p.nombre}</span>
-                    </div>
-                    <span className="text-leaf-700 font-bold">
-                      {formatCurrency(p.precio_unitario)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+            <Badge variant={pedidoCerrado ? 'error' : 'brand'} className="mt-0.5 shrink-0">
+              {pedidoCerrado ? 'Cerrado' : 'Disponible'}
+            </Badge>
+          </CardHeader>
 
-          {/* Bebida */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Coffee className="w-4 h-4 text-stone-400" />
-              <span className="font-semibold text-stone-800 text-sm">Bebida</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {bebidaOptions.map((p) => {
-                const seleccionado = selectedBebidaId === p.id
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => seleccionarBebida(p)}
-                    className={cn(
-                      'flex flex-col items-center justify-between p-3 rounded-lg border transition-all duration-200',
-                      seleccionado
-                        ? 'border-leaf-600 bg-leaf-50 ring-2 ring-leaf-600 shadow-sm shadow-leaf-500/20'
-                        : 'border-stone-100 bg-white hover:border-stone-200 hover:shadow-sm'
-                    )}
-                  >
-                    <div className="flex items-center gap-2 w-full justify-center">
-                      <input
-                        type="radio"
-                        checked={seleccionado}
-                        onChange={() => seleccionarBebida(p)}
-                        className="w-4 h-4 text-leaf-600 accent-leaf-600"
-                        readOnly
-                      />
-                      <span className="text-sm font-medium text-stone-800 leading-tight">{p.nombre}</span>
-                    </div>
-                    <span className="text-leaf-700 font-bold">
-                      {formatCurrency(p.precio_unitario)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <CardContent className="space-y-6">
+            {/* Plato principal */}
+            <section aria-labelledby="principal-title">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-leaf-50 text-leaf-700">
+                  <UtensilsCrossed className="h-3.5 w-3.5" />
+                </span>
+                <h4 id="principal-title" className="text-sm font-semibold text-stone-800">
+                  Plato principal
+                </h4>
+                <span className="text-[11px] text-stone-400">Obligatorio</span>
+              </div>
 
-          {/* Cantidad */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Droplets className="w-4 h-4 text-stone-400" />
-              <span className="font-semibold text-stone-800 text-sm">Cantidad de porciones</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" size="sm" className="h-10 w-10 text-lg" onClick={() => cambiarCantidad(-1)}>
-                −
-              </Button>
-              <span className="w-10 text-center font-bold text-stone-800">{cantidad}</span>
-              <Button variant="outline" size="sm" className="h-10 w-10 text-lg" onClick={() => cambiarCantidad(1)}>
-                +
-              </Button>
-            </div>
-          </div>
+              {principalOptions.length === 0 ? (
+                <p className="rounded-xl bg-stone-50 px-3 py-4 text-sm text-stone-500">
+                  No hay platos principales publicados para hoy.
+                </p>
+              ) : (
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {principalOptions.map((p) => {
+                    const seleccionado = selectedPrincipalId === p.id
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => seleccionarPrincipal(p)}
+                        aria-pressed={seleccionado}
+                        className={cn(
+                          'flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-200',
+                          seleccionado
+                            ? 'border-leaf-600 bg-leaf-50 ring-1 ring-leaf-600/20'
+                            : 'border-stone-200 bg-white hover:border-leaf-300 hover:bg-leaf-50/40',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+                            seleccionado
+                              ? 'border-leaf-600 bg-leaf-600 text-white'
+                              : 'border-stone-300 text-transparent',
+                          )}
+                          aria-hidden="true"
+                        >
+                          <Check className="h-3 w-3" strokeWidth={3} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-stone-800">
+                            {p.nombre}
+                          </span>
+                          <span className="text-[11px] text-stone-400">Porción individual</span>
+                        </span>
+                        <span className="shrink-0 text-sm font-bold text-leaf-700">
+                          {formatCurrency(p.precio_unitario)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
 
-          {pedidoCerrado && (
-            <div className="rounded-lg bg-ember-50 border border-ember-200 p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-ember-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-ember-800">
-                    Hora límite de corte superada
-                  </p>
-                  <p className="text-xs text-ember-600 mt-1">
-                    Los pedidos cierran a las 11:00 AM. No se pueden tomar más pedidos hoy.
-                  </p>
+            {/* Bebida */}
+            <section aria-labelledby="bebida-title">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-ember-50 text-ember-600">
+                  <Coffee className="h-3.5 w-3.5" />
+                </span>
+                <h4 id="bebida-title" className="text-sm font-semibold text-stone-800">
+                  Bebida
+                </h4>
+                <span className="text-[11px] text-stone-400">Opcional</span>
+              </div>
+
+              {bebidaOptions.length === 0 ? (
+                <p className="rounded-xl bg-stone-50 px-3 py-4 text-sm text-stone-500">
+                  No hay bebidas publicadas para hoy.
+                </p>
+              ) : (
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {bebidaOptions.map((p) => {
+                    const seleccionado = selectedBebidaId === p.id
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => seleccionarBebida(p)}
+                        aria-pressed={seleccionado}
+                        className={cn(
+                          'flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-200',
+                          seleccionado
+                            ? 'border-leaf-600 bg-leaf-50 ring-1 ring-leaf-600/20'
+                            : 'border-stone-200 bg-white hover:border-leaf-300 hover:bg-leaf-50/40',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+                            seleccionado
+                              ? 'border-leaf-600 bg-leaf-600 text-white'
+                              : 'border-stone-300 text-transparent',
+                          )}
+                          aria-hidden="true"
+                        >
+                          <Check className="h-3 w-3" strokeWidth={3} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-stone-800">
+                            {p.nombre}
+                          </span>
+                          <span className="text-[11px] text-stone-400">Bebida natural</span>
+                        </span>
+                        <span className="shrink-0 text-sm font-bold text-leaf-700">
+                          {formatCurrency(p.precio_unitario)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Cantidad */}
+            <section aria-labelledby="cantidad-title">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-stone-100 text-stone-600">
+                  <Plus className="h-3.5 w-3.5" />
+                </span>
+                <h4 id="cantidad-title" className="text-sm font-semibold text-stone-800">
+                  Cantidad de porciones
+                </h4>
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => cambiarCantidad(-1)}
+                  disabled={cantidad <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-stone-100 disabled:opacity-40"
+                  aria-label="Quitar una porción"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="w-8 text-center text-sm font-bold text-stone-900" aria-live="polite">
+                  {cantidad}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => cambiarCantidad(1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-stone-100"
+                  aria-label="Agregar una porción"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            </section>
+
+            {pedidoCerrado && (
+              <div className="rounded-2xl border border-ember-200 bg-ember-50 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-ember-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-ember-800">Hora límite de corte superada</p>
+                    <p className="mt-1 text-xs leading-relaxed text-ember-700">
+                      Los pedidos cierran a las {formatearHora12(horaLimite)}. No se pueden tomar más
+                      pedidos hoy.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Resumen y acción */}
-      <Card variant="raised">
-        <CardContent className="p-4 sm:p-6">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 sm:mb-6">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Total estimado</p>
-              <span className="font-serif text-2xl font-bold text-stone-900">{formatCurrency(totalSeleccionado)}</span>
+        {/* Resumen del pedido */}
+        <Card variant="raised" className="lg:sticky lg:top-6">
+          <CardHeader className="pb-4">
+            <p className="eyebrow">Tu pedido</p>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle>Resumen</CardTitle>
+              <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-leaf-50 px-2 text-xs font-bold text-leaf-800 ring-1 ring-leaf-600/10">
+                {itemsDelMenu.length}
+              </span>
             </div>
-          </div>
-          <p className="mb-4 text-[10px] text-stone-500 sm:mb-6">
-            Los pedidos se confirman antes de la hora límite de corte.
-          </p>
-          <Button
-            variant="ember"
-            className="w-full py-4 text-base font-bold shadow-lg shadow-ember-500/30 hover:shadow-ember-500/50 sm:text-lg"
-            disabled={pedidoCerrado || !selectedPrincipalId || confirmLoading}
-            onClick={handleConfirmar}
-          >
-            {btnConfirmContent}
-          </Button>
-        </CardContent>
-      </Card>
+          </CardHeader>
+
+          <CardContent className="space-y-3 pb-5">
+            {itemsDelMenu.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50/60 px-4 py-6 text-center">
+                <UtensilsCrossed className="mx-auto mb-2 h-6 w-6 text-stone-300" />
+                <p className="text-sm font-medium text-stone-500">Aún no eliges tu plato</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-400">
+                  Selecciona un principal para ver el total.
+                </p>
+              </div>
+            ) : (
+              itemsDelMenu.map((item) => (
+                <div key={item.platilloId} className="flex items-start justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-stone-800">{item.nombre}</p>
+                    <p className="text-[11px] text-stone-400">
+                      {item.cantidad} x {formatCurrency(item.precioUnitario)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-semibold text-stone-800">
+                    {formatCurrency(item.precioUnitario * item.cantidad)}
+                  </span>
+                </div>
+              ))
+            )}
+
+            <div className="border-t border-stone-200/80 pt-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-stone-500">
+                  Total estimado
+                </span>
+                <span className="font-serif text-2xl font-bold text-stone-900">
+                  {formatCurrency(totalSeleccionado)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex-col items-stretch gap-3">
+            <Button
+              variant="ember"
+              size="lg"
+              className="w-full"
+              disabled={pedidoCerrado || !selectedPrincipalId || confirmLoading}
+              onClick={handleConfirmar}
+            >
+              {btnConfirmContent}
+            </Button>
+            <p className="text-center text-[11px] leading-relaxed text-stone-400">
+              {pedidoCerrado
+                ? 'El plazo para pedir hoy ya cerró.'
+                : 'Los pedidos se confirman antes de la hora límite de corte.'}
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
 
       {error && (
-        <div className="rounded-lg bg-ember-50 border border-ember-200 p-4 text-ember-700 text-sm flex items-center gap-3">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          {error}
+        <div
+          className="flex items-start gap-3 rounded-2xl border border-ember-200 bg-ember-50 p-4 text-sm text-ember-700"
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span className="min-w-0 break-words">{error}</span>
         </div>
       )}
     </div>

@@ -6,12 +6,12 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variants = {
-  default: 'border-stone-200 text-stone-700 bg-stone-50',
-  success: 'border-emerald-100 text-emerald-700 bg-emerald-50',
-  warning: 'border-amber-100 text-amber-700 bg-amber-50',
-  error: 'border-rose-100 text-rose-700 bg-rose-50',
-  brand: 'border-leaf-100 text-leaf-700 bg-leaf-50',
-  info: 'border-blue-100 text-blue-700 bg-blue-50',
+  default: 'border-stone-200 bg-stone-100 text-stone-600',
+  success: 'border-leaf-200 bg-leaf-50 text-leaf-800',
+  warning: 'border-ember-200 bg-ember-50 text-ember-700',
+  error: 'border-ember-700 bg-ember-700 text-ember-50',
+  brand: 'border-leaf-800 bg-leaf-700 text-white',
+  info: 'border-leaf-200 bg-white text-leaf-800',
 }
 
 const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
@@ -19,13 +19,13 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     <span
       ref={ref}
       className={cn(
-        'inline-flex items-center rounded-md border px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors',
         variants[variant],
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 )
 Badge.displayName = 'Badge'
 

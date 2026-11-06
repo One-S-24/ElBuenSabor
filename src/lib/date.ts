@@ -123,6 +123,16 @@ export function formatearHoraManagua(
   }).format(fecha)
 }
 
+/** Formatea una hora de 24 h a formato 12 h (p. ej. "1:30 p. m."). */
+export function formatearHora12(hora: string): string {
+  const [horas, minutos] = hora.split(':').map(Number)
+  if (Number.isNaN(horas) || Number.isNaN(minutos)) return hora
+
+  const sufijo = horas >= 12 ? 'p. m.' : 'a. m.'
+  const hora12 = horas % 12 === 0 ? 12 : horas % 12
+  return `${hora12}:${String(minutos).padStart(2, '0')} ${sufijo}`
+}
+
 /** Formatea fecha y hora de un `timestamptz` en Managua. */
 export function formatearFechaHoraManagua(
   valor: string | null | undefined,

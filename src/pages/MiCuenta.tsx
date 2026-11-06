@@ -3,11 +3,13 @@ import { useAuthStore } from '../stores/useAuthStore'
 import { getCuentaActual, getHistorialCuentas } from '../services/accountService'
 import { getPedidosEnRango } from '../services/adminService'
 import { formatCurrency } from '../lib/utils'
-import { formatearFechaISO } from '../lib/date'
-import { History, Clock } from 'lucide-react'
+import { formatearFechaHoraManagua, formatearFechaISO } from '../lib/date'
+import { ChevronRight, Clock, History, Mail, Phone, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import Badge from '../components/ui/badge'
 import Avatar from '../components/ui/avatar'
+import { Skeleton, SkeletonText } from '../components/ui/skeleton'
+import { cn } from '../lib/utils'
 
 const estadoBadge: Record<string, string> = {
   AL_DIA: 'success',
@@ -72,8 +74,64 @@ export default function MiCuenta() {
 
   if (loading) {
     return (
-      <div className="flex h-[60svh] items-center justify-center bg-brand-50">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-leaf-600"></div>
+      <div className="space-y-5 sm:space-y-6" aria-busy="true" aria-live="polite">
+        <span className="sr-only">Cargando estado de cuenta…</span>
+
+        <div className="space-y-2">
+          <Skeleton className="h-2.5 w-20" />
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-3 w-80 max-w-full" />
+        </div>
+
+        <div className="grid gap-4 sm:gap-5 lg:grid-cols-[1fr_1.1fr]">
+          <div className="surface flex items-center gap-4 rounded-2xl p-5 sm:p-6">
+            <Skeleton className="h-16 w-16 shrink-0 rounded-full" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-20 rounded-full" />
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-2.5 w-1/2" />
+              <Skeleton className="h-2.5 w-2/3" />
+            </div>
+          </div>
+          <div className="rounded-3xl bg-leaf-900 p-5 shadow-[var(--shadow-float)] sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <Skeleton className="h-2.5 w-32 bg-white/15" />
+              <Skeleton className="h-5 w-24 rounded-full bg-white/15" />
+            </div>
+            <Skeleton className="mt-5 h-10 w-40 bg-white/15" />
+            <Skeleton className="mt-3 h-2.5 w-48 bg-white/10" />
+          </div>
+        </div>
+
+        <div className="surface space-y-4 rounded-2xl p-5 sm:p-6">
+          <Skeleton className="h-6 w-56 max-w-full" />
+          {[0, 1, 2].map((day) => (
+            <div key={day} className="space-y-3 rounded-2xl border border-stone-200/70 p-3.5">
+              <Skeleton className="h-2.5 w-24" />
+              <div className="flex items-center justify-between gap-3">
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <Skeleton className="h-3 w-2/5" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="surface space-y-4 rounded-2xl p-5 sm:p-6">
+          <Skeleton className="h-6 w-48" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="space-y-2 rounded-2xl border border-stone-200/70 p-4">
+                <Skeleton className="h-2.5 w-20" />
+                <Skeleton className="h-5 w-24" />
+                <SkeletonText lines={1} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -81,95 +139,130 @@ export default function MiCuenta() {
   const estado = cuenta?.estado_pago ?? 'AL_DIA'
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-leaf-900 font-serif">Estado de cuenta</h2>
-          <p className="text-sm text-stone-600">Tu saldo acumulado y consumo por quincena</p>
-        </div>
+    <div className="space-y-5 sm:space-y-6">
+      <div className="min-w-0">
+        <p className="eyebrow">Mi cuenta</p>
+        <h1 className="text-stone-900">Estado de cuenta</h1>
+        <p className="mt-1.5 text-sm text-stone-500">
+          Tu saldo acumulado, el consumo de la quincena y tu historial.
+        </p>
       </div>
 
-      {/* Perfil */}
-      <Card variant="raised" className="border-stone-100">
-        <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-6">
-          <Avatar name={profile?.nombre} size="lg" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-serif text-lg font-semibold text-stone-900">
-              {profile?.nombre ?? 'Cliente'}
-            </p>
-            <p className="truncate text-sm text-stone-500">
-              {profile?.telefono_whatsapp || 'Sin teléfono registrado'}
-            </p>
-            {user?.email && (
-              <p className="mt-0.5 truncate text-xs text-stone-400">{user.email}</p>
-            )}
-          </div>
-          <Badge variant="success" className="self-start sm:self-center">
-            Cliente
-          </Badge>
-        </CardContent>
-      </Card>
-
-      {/* Tarjeta de saldo actual */}
-      <Card variant="raised" className="border-leaf-100 bg-leaf-50/40 shadow-sm shadow-leaf-500/10">
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-leaf-700">Saldo quincena actual</p>
-            <p className="mt-1 text-[10px] text-stone-500">
-              {cuenta ? `${formatearFechaISO(cuenta.fecha_inicio)} al ${formatearFechaISO(cuenta.fecha_fin)}` : ''}
-            </p>
-          </div>
-          <div className="sm:text-right">
-            <div className="font-serif text-2xl font-bold text-stone-900 sm:text-3xl">
-              {formatCurrency(cuenta?.total_acumulado ?? 0)}
+      <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr] sm:gap-5">
+        {/* Perfil */}
+        <Card>
+          <CardContent className="flex items-center gap-4 p-5 sm:p-6">
+            <Avatar name={profile?.nombre} size="xl" className="ring-4 ring-leaf-50" />
+            <div className="min-w-0 flex-1">
+              <Badge variant="brand" className="mb-2">
+                Cliente
+              </Badge>
+              <p className="truncate font-serif text-xl font-semibold text-stone-900">
+                {profile?.nombre ?? 'Cliente'}
+              </p>
+              <div className="mt-1.5 space-y-1">
+                <p className="flex min-w-0 items-center gap-1.5 text-xs text-stone-500">
+                  <Phone className="h-3.5 w-3.5 shrink-0 text-leaf-600" />
+                  <span className="truncate">
+                    {profile?.telefono_whatsapp || 'Sin teléfono registrado'}
+                  </span>
+                </p>
+                {user?.email && (
+                  <p className="flex min-w-0 items-center gap-1.5 text-xs text-stone-500">
+                    <Mail className="h-3.5 w-3.5 shrink-0 text-leaf-600" />
+                    <span className="truncate">{user.email}</span>
+                  </p>
+                )}
+              </div>
             </div>
-            <Badge variant={estadoBadge[estado] as any} className="mt-2">
-              {estadoTexto[estado] ?? estado}
-            </Badge>
-          </div>
-        </CardHeader>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Saldo actual */}
+        <Card variant="ink" className="relative overflow-hidden">
+          <div className="dot-grid pointer-events-none absolute inset-0 opacity-25" aria-hidden="true" />
+          <CardContent className="relative p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-leaf-200 ring-1 ring-white/10">
+                  <Wallet className="h-4 w-4" />
+                </span>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-leaf-300/80">
+                  Saldo quincena actual
+                </p>
+              </div>
+              <Badge variant={estadoBadge[estado] as any}>{estadoTexto[estado] ?? estado}</Badge>
+            </div>
+
+            <p className="mt-4 font-serif text-4xl font-bold leading-none text-white">
+              {formatCurrency(cuenta?.total_acumulado ?? 0)}
+            </p>
+            <p className="mt-2 text-xs text-leaf-100/60">
+              {cuenta
+                ? `${formatearFechaISO(cuenta.fecha_inicio)} al ${formatearFechaISO(cuenta.fecha_fin)}`
+                : 'Sin quincena activa'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Desglose de la quincena actual */}
-      <Card variant="bordered">
-        <CardHeader>
-          <CardTitle className="text-leaf-900">Desglose de platillos consumidos</CardTitle>
-          <p className="text-[11px] text-stone-500 mt-1">Detalle de tu consumo en la quincena actual</p>
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="eyebrow">Consumo</p>
+            <CardTitle>Platillos de esta quincena</CardTitle>
+            <p className="mt-1.5 text-sm text-stone-500">Detalle día por día de tu consumo actual.</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-800 ring-1 ring-leaf-600/10">
+            {detalle.length} día(s)
+          </span>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           {detalle.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3 text-stone-300">
-                <Clock className="w-6 h-6" />
-              </div>
-              <p className="text-stone-500 text-sm">No hay consumos registrados en esta quincena.</p>
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-stone-300 bg-stone-50/60 px-4 py-8 text-center">
+              <Clock className="mb-3 h-8 w-8 text-stone-300" />
+              <p className="text-sm font-medium text-stone-600">
+                No hay consumos registrados en esta quincena.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {detalle.map((dia: any, i: number) => {
                 const items = dia.items ?? []
                 return (
-                  <div key={i} className="border-b border-stone-50 pb-3 last:border-0 last:pb-0">
-                    <p className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-2">
-                      {formatearFechaISO(dia.fecha)}
-                    </p>
-                    <div className="space-y-1">
+                  <div key={i} className="rounded-2xl border border-stone-200/80 bg-white/60 p-3.5">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-leaf-600" />
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+                        {formatearFechaISO(dia.fecha)}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
                       {items.map((item: any, j: number) => (
                         <div key={j} className="flex items-start justify-between gap-3 text-sm">
                           <div className="flex min-w-0 items-start gap-2">
-                            <span className="shrink-0 text-stone-700">{item.cantidad}x</span>
-                            <span className="break-words text-stone-600">{item.platillo}</span>
+                            <span className="shrink-0 rounded-md bg-stone-100 px-1.5 py-0.5 text-[11px] font-bold text-stone-600">
+                              {item.cantidad}x
+                            </span>
+                            <span className="break-words text-stone-700">{item.platillo}</span>
                           </div>
-                          <span className="shrink-0 font-medium text-stone-800">{formatCurrency(item.subtotal)}</span>
+                          <span className="shrink-0 font-semibold text-stone-900">
+                            {formatCurrency(item.subtotal)}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )
               })}
-              <div className="pt-4 border-t border-stone-100 flex justify-between text-sm font-semibold">
-                <span>Total quincena</span>
-                <span className="text-leaf-700">{formatCurrency(cuenta?.total_acumulado ?? 0)}</span>
+              <div className="flex items-center justify-between gap-3 rounded-2xl bg-leaf-50 px-4 py-3 ring-1 ring-leaf-600/10">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-leaf-800">
+                  Total quincena
+                </span>
+                <span className="font-serif text-xl font-bold text-leaf-900">
+                  {formatCurrency(cuenta?.total_acumulado ?? 0)}
+                </span>
               </div>
             </div>
           )}
@@ -177,69 +270,105 @@ export default function MiCuenta() {
       </Card>
 
       {/* Historial y filtro de quincenas anteriores */}
-      <Card variant="bordered">
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-leaf-900">Quincenas anteriores</CardTitle>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-400">
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="eyebrow">Historial</p>
+            <CardTitle>Quincenas anteriores</CardTitle>
+            <p className="mt-1.5 text-sm text-stone-500">
+              Toca una quincena para revisar sus pedidos.
+            </p>
+          </div>
+          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-stone-400">
             {historial.length} registro(s)
           </span>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {historial.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => verPeriodo(c.fecha_inicio, c.fecha_fin)}
-                className={cnBtn(
-                  'flex w-full min-w-0 flex-col items-start gap-1 rounded-lg border border-stone-200 bg-white px-4 py-3 text-left text-stone-700 transition-all duration-200 hover:border-leaf-200 hover:bg-leaf-50 hover:text-leaf-700',
-                )}
-              >
-                <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-stone-400">
-                  {formatearFechaISO(c.fecha_inicio, { month: 'short', day: 'numeric' })}
-                </span>
-                <span className="truncate text-sm font-bold">{formatCurrency(c.total_acumulado)}</span>
-                <span className="truncate text-[10px] text-stone-400">{c.estado_pago}</span>
-              </button>
-            ))}
+            {historial.map((c) => {
+              const clave = `${c.fecha_inicio} al ${c.fecha_fin}`
+              const activo = selectedPeriodo === clave
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => verPeriodo(c.fecha_inicio, c.fecha_fin)}
+                  aria-pressed={activo}
+                  className={cn(
+                    'flex w-full min-w-0 items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200',
+                    activo
+                      ? 'border-leaf-600 bg-leaf-50 ring-1 ring-leaf-600/20'
+                      : 'border-stone-200 bg-white hover:border-leaf-300 hover:bg-leaf-50/40',
+                  )}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-400">
+                      {formatearFechaISO(c.fecha_inicio, { month: 'short', day: 'numeric' })} ·{' '}
+                      {formatearFechaISO(c.fecha_fin, { month: 'short', day: 'numeric' })}
+                    </span>
+                    <span className="mt-0.5 block truncate font-serif text-lg font-bold text-stone-900">
+                      {formatCurrency(c.total_acumulado)}
+                    </span>
+                    <span className="block truncate text-[11px] text-stone-500">
+                      {estadoTexto[c.estado_pago] ?? c.estado_pago}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className={cn(
+                      'h-4 w-4 shrink-0 transition-transform',
+                      activo ? 'translate-x-0.5 text-leaf-700' : 'text-stone-300',
+                    )}
+                  />
+                </button>
+              )
+            })}
             {historial.length === 0 && (
-              <span className="col-span-full py-4 text-center text-sm text-stone-400">No hay quincenas anteriores.</span>
+              <span className="col-span-full py-4 text-center text-sm text-stone-400">
+                No hay quincenas anteriores.
+              </span>
             )}
           </div>
 
           {selectedPeriodo && (
-            <div className="mt-4 border-t border-stone-200 pt-4">
+            <div className="rounded-2xl border border-stone-200/80 bg-white/60 p-4">
               <div className="mb-3 flex items-start gap-2">
-                <History className="mt-0.5 h-4 w-4 shrink-0 text-stone-500" />
+                <History className="mt-0.5 h-4 w-4 shrink-0 text-leaf-600" />
                 <span className="min-w-0 break-words text-sm font-semibold text-stone-800">
                   Detalle: {selectedPeriodo}
                 </span>
               </div>
               {periodoDetalle.length === 0 ? (
-                <p className="py-4 text-center text-sm text-stone-500">
-                  Sin pedidos en este período.
-                </p>
+                <p className="py-4 text-center text-sm text-stone-500">Sin pedidos en este período.</p>
               ) : (
                 <div className="space-y-2">
                   {periodoDetalle.map((p, i) => (
-                    <div key={i} className="flex items-start justify-between gap-3 border-b border-stone-50 pb-2 text-sm last:border-0 last:pb-0">
+                    <div
+                      key={i}
+                      className="flex items-start justify-between gap-3 border-b border-stone-200/70 pb-2 text-sm last:border-0 last:pb-0"
+                    >
                       <div className="min-w-0">
-                        <p className="text-sm text-stone-700">
-                          {new Date(p.fecha_hora).toLocaleString('es-NI', {
-                            hour: '2-digit',
-                            minute: '2-digit',
+                        <p className="text-sm font-medium text-stone-700">
+                          {formatearFechaHoraManagua(p.fecha_hora, {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
                           })}
                         </p>
                         <p className="mt-0.5 break-words text-[11px] text-stone-500">
                           {(p.detalle_pedidos ?? [])
                             .map((d: any) => `${d.cantidad}x ${d.platillos?.nombre ?? 'Platillo'}`)
-                            .join(', ')}
+                            .join(' · ')}
                         </p>
                       </div>
-                      <span className="shrink-0 font-semibold text-stone-900">{formatCurrency(p.total_calculado)}</span>
+                      <span className="shrink-0 font-semibold text-stone-900">
+                        {formatCurrency(p.total_calculado)}
+                      </span>
                     </div>
                   ))}
-                  <div className="mt-3 flex justify-end text-sm font-bold">
-                    Total: {formatCurrency(periodoDetalle.reduce((s, p) => s + p.total_calculado, 0))}
+                  <div className="mt-3 flex justify-end gap-2 border-t border-stone-200/70 pt-3 text-sm">
+                    <span className="text-stone-500">Total:</span>
+                    <span className="font-serif text-base font-bold text-stone-900">
+                      {formatCurrency(periodoDetalle.reduce((s, p) => s + p.total_calculado, 0))}
+                    </span>
                   </div>
                 </div>
               )}
@@ -249,8 +378,4 @@ export default function MiCuenta() {
       </Card>
     </div>
   )
-}
-
-function cnBtn(...classes: (string | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
 }

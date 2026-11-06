@@ -2,20 +2,22 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
+  Info,
   MessageCircle,
   QrCode,
   RefreshCw,
+  RotateCcw,
   Save,
   Send,
   Smartphone,
   Wifi,
   WifiOff,
-  RotateCcw,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import Button from '../components/ui/button'
 import Input from '../components/ui/input'
 import Badge from '../components/ui/badge'
+import { Skeleton, SkeletonText } from '../components/ui/skeleton'
 import { hoyManaguaISO } from '../lib/date'
 import {
   actualizarWhatsAppConfig,
@@ -178,10 +180,8 @@ export default function AdminWhatsApp() {
     const list = await getWhatsAppConfigs()
     setConfigs(list)
 
-    const target = list.find((c) => c.id === preferredId)
-      ?? list.find((c) => c.activo)
-      ?? list[0]
-      ?? null
+    const target =
+      list.find((c) => c.id === preferredId) ?? list.find((c) => c.activo) ?? list[0] ?? null
 
     if (target) {
       setSelectedId(target.id)
@@ -279,7 +279,10 @@ export default function AdminWhatsApp() {
     try {
       const data = await refreshStatus(selectedId)
       if (data.success && data.exists) {
-        notify('success', `Estado de la sesión: ${ESTADOS[data.session?.status ?? '']?.label ?? data.session?.status}`)
+        notify(
+          'success',
+          `Estado de la sesión: ${ESTADOS[data.session?.status ?? '']?.label ?? data.session?.status}`,
+        )
       } else {
         notify('error', data.message || 'No se pudo consultar OpenWA')
       }
@@ -427,109 +430,216 @@ export default function AdminWhatsApp() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-leaf-600"></div>
+      <div className="space-y-5 sm:space-y-6" aria-busy="true" aria-live="polite">
+        <span className="sr-only">Cargando configuración de WhatsApp…</span>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-2.5 w-20" />
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-3 w-80 max-w-full" />
+          </div>
+          <Skeleton className="h-6 w-32 rounded-full" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-3">
+          <div className="space-y-4 sm:space-y-6 xl:col-span-2">
+            <div className="surface space-y-5 rounded-2xl p-5 sm:p-6">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-52" />
+                <SkeletonText lines={2} />
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {[0, 1, 2, 3, 4, 5].map((field) => (
+                  <div key={field} className="space-y-2">
+                    <Skeleton className="h-2.5 w-20" />
+                    <Skeleton className="h-11 rounded-xl" />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Skeleton className="h-10 w-40 rounded-full" />
+                <Skeleton className="h-10 w-36 rounded-full" />
+              </div>
+            </div>
+
+            <div className="surface space-y-4 rounded-2xl p-5 sm:p-6">
+              <Skeleton className="h-5 w-36" />
+              <SkeletonText lines={2} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Skeleton className="h-2.5 w-24" />
+                  <Skeleton className="h-11 rounded-xl" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Skeleton className="h-2.5 w-28" />
+                  <Skeleton className="h-20 rounded-xl" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-44 rounded-full" />
+                <Skeleton className="h-10 w-40 rounded-full" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 sm:space-y-6">
+            <div className="surface space-y-4 rounded-2xl p-5 sm:p-6">
+              <Skeleton className="h-5 w-40" />
+              {[0, 1, 2, 3].map((row) => (
+                <div key={row} className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-2.5 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
+              <div className="flex gap-2 pt-2">
+                <Skeleton className="h-9 w-32 rounded-full" />
+                <Skeleton className="h-9 w-24 rounded-full" />
+              </div>
+            </div>
+
+            <div className="surface space-y-4 rounded-2xl p-5 sm:p-6">
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="mx-auto aspect-square w-full max-w-64 rounded-2xl" />
+              <Skeleton className="mx-auto h-9 w-32 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        <div className="surface space-y-3 rounded-2xl p-5 sm:p-6">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <Skeleton className="h-6 w-56" />
+            <Skeleton className="h-9 w-40 rounded-full" />
+          </div>
+          {[0, 1, 2, 3].map((row) => (
+            <div key={row} className="flex items-center gap-3 rounded-2xl border border-stone-200/70 p-3.5">
+              <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-2.5 w-1/2" />
+              </div>
+              <Skeleton className="h-5 w-20 shrink-0 rounded-full" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
 
+  const noticeStyles =
+    notice?.type === 'error'
+      ? 'border-ember-200 bg-ember-50 text-ember-700'
+      : notice?.type === 'info'
+        ? 'border-stone-200 bg-white text-stone-600'
+        : 'border-leaf-200 bg-leaf-50 text-leaf-800'
+  const NoticeIcon = notice?.type === 'error' ? AlertTriangle : notice?.type === 'info' ? Info : CheckCircle2
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2">
-          <MessageCircle className="h-5 w-5 shrink-0 text-leaf-700" />
-          <h2 className="min-w-0 truncate text-leaf-900 font-serif">WhatsApp OpenWA</h2>
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p className="eyebrow">Integración</p>
+          <h1 className="text-stone-900">WhatsApp OpenWA</h1>
+          <p className="mt-1.5 text-sm text-stone-500">
+            Administra la sesión, el QR y las notificaciones del comedor.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={estadoInfo.variant}>
-            <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current" />
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {estadoInfo.label}
           </Badge>
           {status?.session?.phone && (
-            <span className="text-xs text-stone-500">{status.session.phone}</span>
+            <span className="font-mono text-xs text-stone-500">{status.session.phone}</span>
           )}
         </div>
       </div>
 
       {notice && (
         <div
-          className={
-            notice.type === 'error'
-              ? 'rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700'
-              : notice.type === 'info'
-                ? 'rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700'
-                : 'rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700'
-          }
+          className={`flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm ${noticeStyles}`}
+          role="status"
         >
-          {notice.text}
+          <NoticeIcon className="mt-0.5 h-4 w-4 shrink-0" />
+          <span className="min-w-0 break-words">{notice.text}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-3">
         {/* Configuración + prueba */}
         <div className="space-y-4 sm:space-y-6 xl:col-span-2">
-          <Card className="rounded-xl">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <CardTitle className="text-leaf-900 font-serif">Conexión con OpenWA</CardTitle>
-                  <p className="text-[11px] text-stone-500 mt-1">
-                    URL del gateway, API key y nombre de la sesión. La API key se guarda en la tabla
-                    {' '}<code className="text-[10px] bg-stone-100 px-1 py-0.5 rounded">whatsapp_config</code>{' '}
-                    y solo la ven administradores.
-                  </p>
+          <Card>
+            <CardHeader className="flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700">
+                    <MessageCircle className="h-4 w-4" />
+                  </span>
+                  <CardTitle>Conexión con OpenWA</CardTitle>
                 </div>
-                {configs.length > 1 && (
-                  <select
-                    value={selectedId}
-                    onChange={(e) => handleSelectConfig(e.target.value)}
-                    className="h-9 w-full max-w-full rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-leaf-500 sm:w-auto"
-                  >
-                    {configs.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre_config}{c.activo ? ' (activa)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <p className="mt-2 text-sm leading-relaxed text-stone-500">
+                  URL del gateway, API key y nombre de la sesión. La API key se guarda en la tabla{' '}
+                  <code className="rounded bg-stone-100 px-1 py-0.5 text-[10px] text-stone-600">
+                    whatsapp_config
+                  </code>{' '}
+                  y solo la ven administradores.
+                </p>
               </div>
+              {configs.length > 1 && (
+                <select
+                  value={selectedId}
+                  onChange={(e) => handleSelectConfig(e.target.value)}
+                  aria-label="Seleccionar configuración"
+                  className="h-10 w-full shrink-0 rounded-xl border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:border-leaf-500 focus:outline-none focus:ring-4 focus:ring-leaf-500/15 sm:w-auto"
+                >
+                  {configs.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre_config}
+                      {c.activo ? ' (activa)' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Nombre</label>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="wa-nombre">Nombre</label>
                   <Input
+                    id="wa-nombre"
                     value={form.nombre_config}
                     onChange={(e) => updateForm('nombre_config', e.target.value)}
                     placeholder="OpenWA Local"
-                    leftIcon={<Smartphone className="w-4 h-4" />}
+                    leftIcon={<Smartphone className="h-4 w-4" />}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Sesión</label>
+                <div>
+                  <label htmlFor="wa-sesion">Sesión</label>
                   <Input
+                    id="wa-sesion"
                     value={form.session_id}
                     onChange={(e) => updateForm('session_id', e.target.value)}
                     placeholder="el-buen-sabor"
-                    leftIcon={<Wifi className="w-4 h-4" />}
+                    leftIcon={<Wifi className="h-4 w-4" />}
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">URL base</label>
+                <div className="md:col-span-2">
+                  <label htmlFor="wa-url">URL base</label>
                   <Input
+                    id="wa-url"
                     value={form.api_url}
                     onChange={(e) => updateForm('api_url', e.target.value)}
                     placeholder="http://host.docker.internal:2785"
                   />
-                  <p className="text-[10px] text-stone-500">
-                    Local: <code>http://host.docker.internal:2785</code>. Producción: URL HTTPS pública del gateway.
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-stone-400">
+                    Local: <code>http://host.docker.internal:2785</code>. Producción: URL HTTPS
+                    pública del gateway.
                   </p>
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">
-                    API key de OpenWA
-                  </label>
+                <div className="md:col-span-2">
+                  <label htmlFor="wa-key">API key de OpenWA</label>
                   <Input
+                    id="wa-key"
                     type="password"
                     value={form.api_key}
                     onChange={(e) => updateForm('api_key', e.target.value)}
@@ -540,25 +650,28 @@ export default function AdminWhatsApp() {
                     }
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Teléfono origen</label>
+                <div>
+                  <label htmlFor="wa-telefono">Teléfono origen</label>
                   <Input
+                    id="wa-telefono"
                     value={form.telefono_origen}
                     onChange={(e) => updateForm('telefono_origen', e.target.value)}
                     placeholder="+505 8888 7777"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Código de país</label>
+                <div>
+                  <label htmlFor="wa-pais">Código de país</label>
                   <Input
+                    id="wa-pais"
                     value={form.country_code}
                     onChange={(e) => updateForm('country_code', e.target.value)}
                     placeholder="505"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Pausa entre envíos (ms)</label>
+                <div>
+                  <label htmlFor="wa-delay">Pausa entre envíos (ms)</label>
                   <Input
+                    id="wa-delay"
                     type="number"
                     min={0}
                     max={10000}
@@ -566,66 +679,75 @@ export default function AdminWhatsApp() {
                     onChange={(e) => updateForm('delay_ms', Number(e.target.value))}
                   />
                 </div>
-                <label className="flex items-center gap-2 self-end pb-2 text-sm text-stone-700">
+                <label className="flex cursor-pointer items-center gap-2.5 self-end rounded-xl border border-stone-200 bg-stone-50/70 px-3.5 py-3 text-sm text-stone-700">
                   <input
                     type="checkbox"
                     checked={form.activo}
                     onChange={(e) => updateForm('activo', e.target.checked)}
-                    className="h-4 w-4 rounded border-stone-300 text-leaf-600 focus:ring-leaf-500"
+                    className="h-4 w-4 rounded border-stone-300 accent-leaf-600 focus:ring-leaf-500"
                   />
                   Configuración activa
                 </label>
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 border-t border-stone-200/70 pt-4">
                 <Button variant="leaf" onClick={handleSave} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className="h-4 w-4" />
                   {saving ? 'Guardando...' : selectedId ? 'Guardar cambios' : 'Crear configuración'}
                 </Button>
                 <Button variant="outline" onClick={handleRefresh} disabled={!selectedId || refreshing}>
-                  <RefreshCw className={refreshing ? 'w-4 h-4 mr-2 animate-spin' : 'w-4 h-4 mr-2'} />
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                   Probar conexión
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-leaf-900 font-serif">Enviar prueba</CardTitle>
-              <p className="text-[11px] text-stone-500 mt-1">
-                Envía un mensaje directo para verificar que la sesión está conectada.
-                El teléfono se normaliza con el código de país configurado.
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-ember-50 text-ember-600">
+                  <Send className="h-4 w-4" />
+                </span>
+                <CardTitle>Enviar prueba</CardTitle>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-stone-500">
+                Envía un mensaje directo para verificar que la sesión está conectada. El teléfono se
+                normaliza con el código de país configurado.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Teléfono destino</label>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="wa-test-phone">Teléfono destino</label>
                   <Input
+                    id="wa-test-phone"
                     value={testPhone}
                     onChange={(e) => setTestPhone(e.target.value)}
                     placeholder="88887777"
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-[11px] font-semibold text-stone-600 tracking-wider">Mensaje (opcional)</label>
+                <div className="md:col-span-2">
+                  <label htmlFor="wa-test-message">
+                    Mensaje <span className="font-normal text-stone-400">(opcional)</span>
+                  </label>
                   <textarea
+                    id="wa-test-message"
                     value={testMessage}
                     onChange={(e) => setTestMessage(e.target.value)}
                     rows={3}
                     placeholder="Mensaje de prueba desde el panel de administración"
-                    className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-leaf-500/50"
+                    className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 shadow-[0_1px_2px_rgba(28,25,23,0.04)] transition-all placeholder:text-stone-400 hover:border-stone-400 focus:border-leaf-500 focus:outline-none focus:ring-4 focus:ring-leaf-500/15"
                   />
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="ember" onClick={handleTestSend} disabled={!selectedId || sendingTest}>
-                  <Send className="w-4 h-4 mr-2" />
+                  <Send className="h-4 w-4" />
                   {sendingTest ? 'Enviando...' : 'Enviar mensaje de prueba'}
                 </Button>
                 <Button variant="outline" onClick={handleSendCorteTest} disabled={!selectedId || sendingTest}>
-                  <Send className="w-4 h-4 mr-2" />
+                  <Send className="h-4 w-4" />
                   Enviar corte de prueba
                 </Button>
               </div>
@@ -635,74 +757,79 @@ export default function AdminWhatsApp() {
 
         {/* Estado + QR */}
         <div className="space-y-4 sm:space-y-6">
-          <Card className="rounded-xl">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-leaf-900 font-serif">Estado de la sesión</CardTitle>
+              <CardTitle>Estado de la sesión</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Estado</span>
-                <Badge variant={estadoInfo.variant}>{estadoInfo.label}</Badge>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                  Estado
+                </span>
+                <Badge variant={estadoInfo.variant}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {estadoInfo.label}
+                </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Sesión</span>
-                <span className="text-sm text-stone-800 font-mono">{form.session_id || '—'}</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                  Sesión
+                </span>
+                <span className="truncate font-mono text-sm text-stone-800">
+                  {form.session_id || '—'}
+                </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Teléfono</span>
-                <span className="text-sm text-stone-800">{status?.session?.phone || '—'}</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                  Teléfono
+                </span>
+                <span className="truncate text-sm text-stone-800">{status?.session?.phone || '—'}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Nombre</span>
-                <span className="text-sm text-stone-800">{status?.session?.pushName || '—'}</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                  Nombre
+                </span>
+                <span className="truncate text-sm text-stone-800">
+                  {status?.session?.pushName || '—'}
+                </span>
               </div>
               {status?.baseUrl && (
-                <div className="rounded-md bg-stone-50 px-3 py-2 text-[10px] text-stone-500 break-all">
+                <div className="break-all rounded-xl bg-stone-50 px-3 py-2 text-[10px] text-stone-500">
                   {status.baseUrl}
                 </div>
               )}
               {status?.message && (
-                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{status.message}</span>
+                <div className="flex items-start gap-2 rounded-xl border border-ember-200 bg-ember-50 px-3 py-2 text-[11px] text-ember-700">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span className="min-w-0 break-words">{status.message}</span>
                 </div>
               )}
               {status?.session?.lastError && (
-                <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] text-rose-700">
-                  <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{status.session.lastError}</span>
+                <div className="flex items-start gap-2 rounded-xl border border-ember-200 bg-ember-50 px-3 py-2 text-[11px] text-ember-700">
+                  <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span className="min-w-0 break-words">{status.session.lastError}</span>
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button
-                  variant="leaf"
-                  size="sm"
-                  onClick={handleConnect}
-                  disabled={!selectedId || connecting}
-                >
-                  <Wifi className="w-4 h-4 mr-1.5" />
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button variant="leaf" size="sm" onClick={handleConnect} disabled={!selectedId || connecting}>
+                  <Wifi className="h-4 w-4" />
                   {connecting ? 'Conectando...' : 'Conectar / Iniciar'}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleStop}
-                  disabled={!selectedId || stopping}
-                >
-                  <WifiOff className="w-4 h-4 mr-1.5" />
+                <Button variant="outline" size="sm" onClick={handleStop} disabled={!selectedId || stopping}>
+                  <WifiOff className="h-4 w-4" />
                   {stopping ? 'Deteniendo...' : 'Detener'}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-leaf-900 font-serif">Código QR</CardTitle>
-              <p className="text-[11px] text-stone-500 mt-1">
-                WhatsApp → Dispositivos vinculados → Vincular dispositivo.
-                El QR se actualiza automáticamente mientras la sesión lo necesite.
+              <CardTitle>Código QR</CardTitle>
+              <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
+                WhatsApp → Dispositivos vinculados → Vincular dispositivo. El QR se actualiza
+                automáticamente mientras la sesión lo necesite.
               </p>
             </CardHeader>
             <CardContent>
@@ -710,12 +837,12 @@ export default function AdminWhatsApp() {
                 <img
                   src={qr.qrCode}
                   alt="Código QR de WhatsApp"
-                  className="mx-auto aspect-square w-full max-w-64 rounded-lg border border-stone-200 bg-white object-contain"
+                  className="mx-auto aspect-square w-full max-w-64 rounded-2xl border border-stone-200 bg-white object-contain p-2"
                 />
               ) : (
-                <div className="mx-auto flex aspect-square w-full max-w-64 flex-col items-center justify-center rounded-lg border border-dashed border-stone-300 bg-stone-50 px-6 text-center">
-                  <QrCode className="w-10 h-10 text-stone-300 mb-2" />
-                  <p className="text-xs text-stone-500">
+                <div className="mx-auto flex aspect-square w-full max-w-64 flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-6 text-center">
+                  <QrCode className="mb-2 h-10 w-10 text-stone-300" />
+                  <p className="text-xs leading-relaxed text-stone-500">
                     {sessionStatus === 'ready'
                       ? 'La sesión ya está conectada. No se necesita QR.'
                       : 'El QR aparecerá cuando la sesión esté iniciando.'}
@@ -724,7 +851,7 @@ export default function AdminWhatsApp() {
               )}
               <div className="mt-4 flex justify-center">
                 <Button variant="outline" size="sm" onClick={handleQr} disabled={!selectedId}>
-                  <RefreshCw className="w-4 h-4 mr-1.5" /> Actualizar QR
+                  <RefreshCw className="h-4 w-4" /> Actualizar QR
                 </Button>
               </div>
             </CardContent>
@@ -733,19 +860,19 @@ export default function AdminWhatsApp() {
       </div>
 
       {/* Bitácora */}
-      <Card className="rounded-xl">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Card>
+        <CardHeader className="flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="text-leaf-900 font-serif">Bitácora de notificaciones</CardTitle>
-            <p className="mt-1 text-[11px] text-stone-500">Últimos 25 envíos registrados en Supabase.</p>
+            <CardTitle>Bitácora de notificaciones</CardTitle>
+            <p className="mt-1.5 text-sm text-stone-500">Últimos 25 envíos registrados en Supabase.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={loadBitacora} disabled={loadingLog}>
-              <RefreshCw className={loadingLog ? 'mr-1.5 h-4 w-4 animate-spin' : 'mr-1.5 h-4 w-4'} />
+              <RefreshCw className={`h-4 w-4 ${loadingLog ? 'animate-spin' : ''}`} />
               Actualizar
             </Button>
             <Button variant="ember" size="sm" onClick={handleRetry} disabled={retrying}>
-              <RotateCcw className="mr-1.5 h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
               {retrying ? 'Reintentando...' : 'Reintentar fallidos'}
             </Button>
           </div>
@@ -753,11 +880,11 @@ export default function AdminWhatsApp() {
         <CardContent>
           {loadingLog ? (
             <div className="flex h-32 items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-leaf-600"></div>
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-leaf-200 border-b-leaf-600" />
             </div>
           ) : bitacora.length === 0 ? (
-            <div className="p-8 text-center">
-              <CheckCircle2 className="w-8 h-8 text-stone-300 mx-auto mb-2" />
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-stone-300 bg-stone-50/60 px-4 py-8 text-center">
+              <CheckCircle2 className="mb-2 h-8 w-8 text-stone-300" />
               <p className="text-sm text-stone-500">Todavía no hay notificaciones registradas.</p>
             </div>
           ) : (
@@ -765,13 +892,13 @@ export default function AdminWhatsApp() {
               {/* Vista móvil */}
               <div className="space-y-3 md:hidden">
                 {bitacora.map((row) => (
-                  <div key={row.id} className="space-y-2 rounded-lg border border-stone-100 p-4">
+                  <div key={row.id} className="space-y-2 rounded-2xl border border-stone-200/80 bg-white/60 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-stone-900">
                           {row.perfiles?.nombre ?? '—'}
                         </p>
-                        <p className="text-[11px] text-stone-500">{formatDate(row.created_at)}</p>
+                        <p className="text-[11px] text-stone-400">{formatDate(row.created_at)}</p>
                       </div>
                       <Badge variant={row.enviado_exitosamente ? 'success' : 'error'}>
                         {row.enviado_exitosamente ? 'Enviado' : 'Fallido'}
@@ -779,20 +906,26 @@ export default function AdminWhatsApp() {
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">Plantilla</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-400">
+                          Plantilla
+                        </p>
                         <p className="truncate text-stone-600">
                           {row.whatsapp_plantillas?.nombre ?? row.tipo_notificacion ?? '—'}
                         </p>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">Teléfono</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-400">
+                          Teléfono
+                        </p>
                         <p className="truncate font-mono text-stone-600">
-                          {row.telefono_destino?.replace(/@c\.us$/, '') ?? row.perfiles?.telefono_whatsapp ?? '—'}
+                          {row.telefono_destino?.replace(/@c\.us$/, '') ??
+                            row.perfiles?.telefono_whatsapp ??
+                            '—'}
                         </p>
                       </div>
                     </div>
                     {(row.message_id || row.error_mensaje) && (
-                      <p className="break-all text-[11px] text-stone-500">
+                      <p className="break-all rounded-lg bg-stone-50 px-2.5 py-1.5 text-[11px] text-stone-500">
                         {row.message_id ?? row.error_mensaje}
                       </p>
                     )}
@@ -804,36 +937,56 @@ export default function AdminWhatsApp() {
               <div className="hidden overflow-x-auto md:block">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-stone-200">
-                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Fecha</th>
-                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Cliente</th>
-                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Plantilla</th>
-                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Teléfono</th>
-                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Estado</th>
-                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-stone-500">Detalle</th>
+                    <tr className="border-b border-stone-200 bg-stone-50/60">
+                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+                        Fecha
+                      </th>
+                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+                        Cliente
+                      </th>
+                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+                        Plantilla
+                      </th>
+                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+                        Teléfono
+                      </th>
+                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+                        Estado
+                      </th>
+                      <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+                        Detalle
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {bitacora.map((row) => (
-                      <tr key={row.id} className="border-b border-stone-50 transition-colors hover:bg-stone-50">
-                        <td className="whitespace-nowrap px-3 py-3 text-xs text-stone-600">
+                      <tr
+                        key={row.id}
+                        className="border-b border-stone-100 transition-colors last:border-0 hover:bg-leaf-50/40"
+                      >
+                        <td className="whitespace-nowrap px-3 py-3.5 text-xs text-stone-500">
                           {formatDate(row.created_at)}
                         </td>
-                        <td className="px-3 py-3 text-sm text-stone-900">
+                        <td className="px-3 py-3.5 text-sm font-medium text-stone-900">
                           {row.perfiles?.nombre ?? '—'}
                         </td>
-                        <td className="px-3 py-3 text-xs text-stone-600">
+                        <td className="px-3 py-3.5 text-xs text-stone-600">
                           {row.whatsapp_plantillas?.nombre ?? row.tipo_notificacion ?? '—'}
                         </td>
-                        <td className="px-3 py-3 font-mono text-xs text-stone-600">
-                          {row.telefono_destino?.replace(/@c\.us$/, '') ?? row.perfiles?.telefono_whatsapp ?? '—'}
+                        <td className="px-3 py-3.5 font-mono text-xs text-stone-600">
+                          {row.telefono_destino?.replace(/@c\.us$/, '') ??
+                            row.perfiles?.telefono_whatsapp ??
+                            '—'}
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-3 py-3.5">
                           <Badge variant={row.enviado_exitosamente ? 'success' : 'error'}>
                             {row.enviado_exitosamente ? 'Enviado' : 'Fallido'}
                           </Badge>
                         </td>
-                        <td className="max-w-[280px] truncate px-3 py-3 text-[11px] text-stone-500" title={row.message_id ?? row.error_mensaje ?? ''}>
+                        <td
+                          className="max-w-[280px] truncate px-3 py-3.5 text-[11px] text-stone-500"
+                          title={row.message_id ?? row.error_mensaje ?? ''}
+                        >
                           {row.message_id ?? row.error_mensaje ?? '—'}
                         </td>
                       </tr>

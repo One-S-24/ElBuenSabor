@@ -9,30 +9,34 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'leaf', size = 'default', ...props }, ref) => {
     const variants = {
-      leaf: 'bg-leaf-600 text-white hover:bg-leaf-700 shadow-sm hover:shadow-md',
-      ember: 'bg-ember-600 text-white hover:bg-ember-700 shadow-sm hover:shadow-md',
-      outline: 'border border-stone-300 bg-white hover:bg-stone-50 text-stone-900',
-      ghost: 'hover:bg-stone-100 text-stone-600',
-      stone: 'bg-stone-900 text-white hover:bg-stone-800 shadow-sm hover:shadow-md',
+      leaf: 'bg-leaf-700 text-white shadow-[0_10px_24px_-14px_rgba(20,83,45,0.9)] hover:bg-leaf-800 hover:shadow-[0_14px_30px_-14px_rgba(20,83,45,0.85)]',
+      ember:
+        'bg-ember-600 text-white shadow-[0_10px_24px_-14px_rgba(124,45,18,0.9)] hover:bg-ember-700 hover:shadow-[0_14px_30px_-14px_rgba(124,45,18,0.85)]',
+      outline:
+        'border border-stone-300 bg-white text-stone-800 shadow-[0_1px_2px_rgba(28,25,23,0.05)] hover:border-leaf-300 hover:bg-leaf-50 hover:text-leaf-800',
+      ghost: 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+      stone: 'bg-stone-900 text-white shadow-[0_10px_24px_-14px_rgba(28,25,23,0.9)] hover:bg-stone-800',
     }
     const sizes = {
-      sm: 'h-9 px-3 text-xs',
-      default: 'h-10 px-4 py-2 text-sm',
-      lg: 'h-11 px-6 py-3 text-base',
+      sm: 'h-9 gap-1.5 px-3.5 text-xs',
+      default: 'h-11 gap-2 px-5 text-sm',
+      lg: 'h-12 gap-2.5 px-7 text-base',
     }
     return (
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus-ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-95',
+          'inline-flex select-none items-center justify-center rounded-full font-semibold tracking-tight transition-all duration-200',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-50',
+          'active:translate-y-px active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50',
           variants[variant],
           sizes[size],
-          className
+          className,
         )}
         {...props}
       />
     )
-  }
+  },
 )
 Button.displayName = 'Button'
 
