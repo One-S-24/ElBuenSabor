@@ -72,7 +72,7 @@ export default function Login() {
               <UtensilsCrossed className="h-6 w-6" />
             </span>
             <div>
-              <p className="font-serif text-xl font-bold leading-tight tracking-tight">El Buen Sabor</p>
+              <p className="font-serif text-3xl font-semibold leading-tight tracking-tight">Buen Sabor</p>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-leaf-300/80">
                 Comedor
               </p>
