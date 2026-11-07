@@ -4,7 +4,7 @@
 
 -- Tabla catálogo maestro (platillos reutilizables)
 create table public.catalogo_platillos (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     nombre text not null,
     descripcion text,
     precio_referencia numeric(10,2) not null,

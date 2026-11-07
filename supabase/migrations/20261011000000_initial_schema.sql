@@ -1,5 +1,4 @@
--- Habilitar extensiones necesarias
-create extension if not exists "uuid-ossp";
+-- gen_random_uuid() es nativo de PostgreSQL 13+; no requiere la extensión uuid-ossp.
 
 -- ==========================================
 -- TIPOS ENUMERADOS
@@ -23,7 +22,7 @@ create table public.perfiles (
 -- TABLA: menus_diarios
 -- ==========================================
 create table public.menus_diarios (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     fecha date not null unique,
     hora_limite_pedido time not null default '11:00:00',
     activo boolean default true,
@@ -34,7 +33,7 @@ create table public.menus_diarios (
 -- TABLA: platillos
 -- ==========================================
 create table public.platillos (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     menu_id uuid references public.menus_diarios(id) on delete cascade not null,
     nombre text not null,
     descripcion text,
@@ -48,7 +47,7 @@ create table public.platillos (
 -- TABLA: pedidos
 -- ==========================================
 create table public.pedidos (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     cliente_id uuid references public.perfiles(id) not null,
     fecha_hora timestamp with time zone default timezone('utc'::text, now()) not null,
     estado estado_pedido default 'PENDIENTE',
@@ -59,7 +58,7 @@ create table public.pedidos (
 -- TABLA: detalle_pedidos
 -- ==========================================
 create table public.detalle_pedidos (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     pedido_id uuid references public.pedidos(id) on delete cascade not null,
     platillo_id uuid references public.platillos(id) not null,
     cantidad integer not null check (cantidad > 0),
@@ -70,7 +69,7 @@ create table public.detalle_pedidos (
 -- TABLA: cuentas_quincenales
 -- ==========================================
 create table public.cuentas_quincenales (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     cliente_id uuid references public.perfiles(id) not null,
     fecha_inicio date not null,
     fecha_fin date not null,
@@ -83,7 +82,7 @@ create table public.cuentas_quincenales (
 -- TABLA: bitacora_notificaciones_whatsapp
 -- ==========================================
 create table public.bitacora_notificaciones (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     cliente_id uuid references public.perfiles(id) not null,
     monto_notificado numeric(10,2) not null,
     enviado_exitosamente boolean default false,

@@ -4,7 +4,7 @@
 
 -- Tabla configuración de proveedores WhatsApp
 create table public.whatsapp_config (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     proveedor text check (proveedor in ('twilio', 'gupshup', 'wati', 'oficial', 'personalizado')) not null,
     nombre_config text not null,
     api_url text not null,
@@ -18,7 +18,7 @@ create table public.whatsapp_config (
 
 -- Tabla plantillas de mensajes
 create table public.whatsapp_plantillas (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     nombre text not null unique,
     descripcion text,
     tipo text check (tipo in ('corte_quincenal', 'recordatorio_pago', 'pedido_confirmado', 'stock_bajo', 'personalizado')) not null,

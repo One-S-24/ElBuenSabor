@@ -67,7 +67,7 @@ create policy "Clientes ven el detalle de sus pedidos" on public.detalle_pedidos
 -- 4. Reporte consolidado de cortes quincenales
 -- ==========================================================
 create table if not exists public.cortes_quincenales (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     fecha_inicio date not null,
     fecha_fin date not null,
     cuentas_procesadas integer not null default 0,
