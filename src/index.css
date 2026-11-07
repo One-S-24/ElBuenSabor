@@ -229,6 +229,22 @@
   }
 }
 
+/* Transición sutil al cambiar entre pestañas de administración. */
+.admin-route-transition {
+  animation: admin-route-fade 0.22s ease-out;
+}
+
+@keyframes admin-route-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

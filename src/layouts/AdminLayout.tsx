@@ -37,6 +37,13 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const isDesktop = useIsDesktop()
   const drawerHidden = !sidebarOpen && !isDesktop
+  const [routeKey, setRouteKey] = React.useState(0)
+
+  // Incrementa la key del contenedor de rutas al cambiar de sección para
+  // forzar un remount limpio y que la animación de entrada se ejecute en cada transición.
+  React.useEffect(() => {
+    setRouteKey((prev) => prev + 1)
+  }, [location.pathname])
 
   React.useEffect(() => {
     if (!sidebarOpen) return
@@ -204,7 +211,10 @@ export default function AdminLayout() {
         </header>
 
         <main className="flex-1 px-3 py-5 sm:px-6 sm:py-8">
-          <div className="mx-auto w-full max-w-6xl">
+          <div
+            className="mx-auto w-full max-w-6xl admin-route-transition"
+            key={routeKey}
+          >
             <React.Suspense fallback={<AdminRouteSkeleton />}>
               <Outlet />
             </React.Suspense>
