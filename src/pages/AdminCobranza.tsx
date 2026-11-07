@@ -19,6 +19,7 @@ import {
   Users,
   Wallet,
   X,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import Button from '../components/ui/button'
@@ -284,15 +285,22 @@ export default function AdminCobranza() {
             <Button
               variant="outline"
               onClick={cargarPeriodo}
-              disabled={loading}
+              isLoading={loading}
+              loadingText="Cargando período"
               className="w-full sm:w-auto"
             >
-              {loading ? 'Cargando...' : 'Cargar período'}
+              {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin me-2" />
+                    Cargando período
+                  </>
+                ) : (
+                  'Cargar período'
+                )}
             </Button>
             <Button
               variant="leaf"
               onClick={ejecutarCorte}
-              disabled={ejecutando}
               className="w-full sm:w-auto"
             >
               {btnCorteContent}
@@ -442,7 +450,8 @@ export default function AdminCobranza() {
                         size="sm"
                         className="flex-1"
                         onClick={() => enviarWA(c)}
-                        disabled={enviandoTodos}
+                        isLoading={enviandoTodos}
+                          loadingText="Enviando..."
                       >
                         <Send className="h-3.5 w-3.5" /> Enviar WA
                       </Button>
@@ -488,10 +497,11 @@ export default function AdminCobranza() {
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => enviarWA(c)} disabled={enviandoTodos}>
+                            <Button className="cursor-pointer" variant="outline" size="sm" onClick={() => enviarWA(c)} isLoading={enviandoTodos}
+                          loadingText="Enviando...">
                               <Send className="h-3.5 w-3.5" /> Enviar WA
                             </Button>
-                            <Button variant="leaf" size="sm" onClick={() => abrirAbono(c.cuenta_id)}>
+                            <Button className="cursor-pointer" variant="leaf" size="sm" onClick={() => abrirAbono(c.cuenta_id)}>
                               <Wallet className="h-3.5 w-3.5" /> Abono
                             </Button>
                           </div>

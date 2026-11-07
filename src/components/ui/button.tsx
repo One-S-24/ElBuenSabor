@@ -1,13 +1,33 @@
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { Loader2 } from 'lucide-react'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'leaf' | 'ember' | 'outline' | 'ghost' | 'stone'
   size?: 'sm' | 'default' | 'lg'
+  /**
+   * Cuando es `true`, el botón muestra un spinner animado y
+   * reemplaza el contenido primario por el secundario (`loadingText`).
+   * El botón se deshabilita automáticamente.
+   */
+  isLoading?: boolean
+  /**
+   * Texto que se muestra cuando el botón está en estado de carga.
+   * Por defecto usa el texto actual del prop `children` y lo reemplaza
+   * por un mensaje genérico si no se provee este valor.
+   */
+  loadingText?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'leaf', size = 'default', ...props }, ref) => {
+  ({
+    className,
+    variant = 'leaf',
+    size = 'default',
+    isLoading = false,
+    loadingText,
+    ...props
+  }, ref) => {
     const variants = {
       leaf: 'bg-leaf-700 text-white shadow-[0_10px_24px_-14px_rgba(20,83,45,0.9)] hover:bg-leaf-800 hover:shadow-[0_14px_30px_-14px_rgba(20,83,45,0.85)]',
       ember:
@@ -22,22 +42,39 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       default: 'h-11 gap-2 px-5 text-sm',
       lg: 'h-12 gap-2.5 px-7 text-base',
     }
+
+    // Clases base del botón (siempre presentes)
+    const baseClasses = cn(
+      'inline-flex select-none items-center justify-center rounded-full font-semibold tracking-tight transition-all duration-200',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-50',
+      'active:translate-y-px active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50',
+      variants[variant],
+      sizes[size],
+      className,
+    )
+
     return (
       <button
         ref={ref}
-        className={cn(
-          'inline-flex select-none items-center justify-center rounded-full font-semibold tracking-tight transition-all duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-50',
-          'active:translate-y-px active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50',
-          variants[variant],
-          sizes[size],
-          className,
-        )}
+        className={baseClasses}
+        disabled={isLoading}
         {...props}
-      />
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin me-2" />
+            {loadingText || 'Procesando...'}
+          </>
+        ) : (
+          <>
+            {props.children}
+          </>
+        )}
+      </button>
     )
-  },
+  }
 )
+
 Button.displayName = 'Button'
 
 export default Button

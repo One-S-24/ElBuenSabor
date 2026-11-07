@@ -217,9 +217,9 @@ export default function MiCuenta() {
                       Puedes escribir 8888 7777 o +505 8888 7777.
                     </p>
                     <div className="flex gap-2">
-                      <Button type="submit" size="sm" disabled={guardandoTelefono}>
+                      <Button type="submit" size="sm" isLoading={guardandoTelefono} loadingText="Guardando">
                         {guardandoTelefono ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin me-2" />
                         ) : (
                           <Check className="h-3.5 w-3.5" />
                         )}

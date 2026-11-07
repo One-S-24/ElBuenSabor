@@ -302,12 +302,9 @@ export default function Login() {
                     leftIcon={<Lock className="h-4 w-4" />}
                   />
                 </div>
-                <Button type="submit" variant="leaf" size="lg" className="w-full" disabled={isLoading}>
+                <Button type="submit" variant="leaf" size="lg" className="w-full" isLoading={isLoading} loadingText="Creando cuenta">
                   {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Creando cuenta...
-                    </>
+                    <Loader2 className="h-4 w-4 animate-spin me-2" />
                   ) : (
                     <>
                       Crear cuenta
@@ -344,12 +341,9 @@ export default function Login() {
                     leftIcon={<Lock className="h-4 w-4" />}
                   />
                 </div>
-                <Button type="submit" variant="leaf" size="lg" className="w-full" disabled={isLoading}>
+                <Button type="submit" variant="leaf" size="lg" className="w-full" isLoading={isLoading} loadingText="Iniciando sesión">
                   {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Iniciando sesión...
-                    </>
+                    <Loader2 className="h-4 w-4 animate-spin me-2" />
                   ) : (
                     <>
                       Iniciar sesión

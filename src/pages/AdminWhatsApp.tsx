@@ -691,7 +691,8 @@ export default function AdminWhatsApp() {
               </div>
 
               <div className="flex flex-wrap gap-2 border-t border-stone-200/70 pt-4">
-                <Button variant="leaf" onClick={handleSave} disabled={saving}>
+                <Button variant="leaf" onClick={handleSave} isLoading={saving}
+                          loadingText="Guardando">
                   <Save className="h-4 w-4" />
                   {saving ? 'Guardando...' : selectedId ? 'Guardar cambios' : 'Crear configuración'}
                 </Button>
@@ -742,11 +743,13 @@ export default function AdminWhatsApp() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="ember" onClick={handleTestSend} disabled={!selectedId || sendingTest}>
+                <Button variant="ember" onClick={handleTestSend} isLoading={sendingTest}
+                          loadingText="Enviando...">
                   <Send className="h-4 w-4" />
                   {sendingTest ? 'Enviando...' : 'Enviar mensaje de prueba'}
                 </Button>
-                <Button variant="outline" onClick={handleSendCorteTest} disabled={!selectedId || sendingTest}>
+                <Button variant="outline" onClick={handleSendCorteTest} isLoading={sendingTest}
+                          loadingText="Enviando...">
                   <Send className="h-4 w-4" />
                   Enviar corte de prueba
                 </Button>
@@ -812,11 +815,13 @@ export default function AdminWhatsApp() {
               )}
 
               <div className="flex flex-wrap gap-2 pt-1">
-                <Button variant="leaf" size="sm" onClick={handleConnect} disabled={!selectedId || connecting}>
+                <Button variant="leaf" size="sm" onClick={handleConnect} isLoading={connecting}
+                          loadingText="Conectando...">
                   <Wifi className="h-4 w-4" />
                   {connecting ? 'Conectando...' : 'Conectar / Iniciar'}
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleStop} disabled={!selectedId || stopping}>
+                <Button variant="outline" size="sm" onClick={handleStop} isLoading={stopping}
+                          loadingText="Deteniendo...">
                   <WifiOff className="h-4 w-4" />
                   {stopping ? 'Deteniendo...' : 'Detener'}
                 </Button>
@@ -867,11 +872,13 @@ export default function AdminWhatsApp() {
             <p className="mt-1.5 text-sm text-stone-500">Últimos 25 envíos registrados en Supabase.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={loadBitacora} disabled={loadingLog}>
+            <Button variant="outline" size="sm" onClick={loadBitacora} isLoading={loadingLog}
+                          loadingText="Actualizando">
               <RefreshCw className={`h-4 w-4 ${loadingLog ? 'animate-spin' : ''}`} />
               Actualizar
             </Button>
-            <Button variant="ember" size="sm" onClick={handleRetry} disabled={retrying}>
+            <Button variant="ember" size="sm" onClick={handleRetry} isLoading={retrying}
+                          loadingText="Reintentando">
               <RotateCcw className="h-4 w-4" />
               {retrying ? 'Reintentando...' : 'Reintentar fallidos'}
             </Button>
