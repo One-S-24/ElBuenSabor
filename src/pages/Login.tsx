@@ -1,18 +1,23 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import {
   Mail,
   Lock,
   AlertTriangle,
   UserPlus,
+  UserRound,
+  Phone,
   ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
   Loader2,
   UtensilsCrossed,
   Wallet,
   Clock,
   ShieldCheck,
 } from 'lucide-react'
+import { registrarCliente } from '../services/authService'
 import Button from '../components/ui/button'
 import Input from '../components/ui/input'
 
@@ -36,21 +41,74 @@ const beneficios = [
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuthStore()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { login, setUser, fetchProfile } = useAuthStore()
+  const esRegistro = searchParams.get('register') === 'true'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [nombre, setNombre] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  const cambiarModo = (registro: boolean) => {
+    setError('')
+    setSuccess('')
+    setSearchParams(registro ? { register: 'true' } : {})
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
     setIsLoading(true)
     try {
       await login(email, password)
       navigate('/', { replace: true })
     } catch (err: any) {
       setError(err.message || 'Credenciales inválidas')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRegistro = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const { user, requiereConfirmacion } = await registrarCliente({
+        nombre,
+        email,
+        password,
+        telefono_whatsapp: telefono,
+      })
+
+      if (requiereConfirmacion) {
+        setSuccess(
+          'Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesión.',
+        )
+        setPassword('')
+        setConfirmPassword('')
+        setSearchParams({})
+        return
+      }
+
+      setUser(user)
+      await fetchProfile()
+      navigate('/', { replace: true })
+    } catch (err: any) {
+      setError(err.message || 'No se pudo crear la cuenta')
     } finally {
       setIsLoading(false)
     }
@@ -141,12 +199,14 @@ export default function Login() {
           </div>
 
           <div className="surface rounded-3xl p-6 sm:p-8">
-            <p className="eyebrow">Bienvenido</p>
+            <p className="eyebrow">{esRegistro ? 'Únete' : 'Bienvenido'}</p>
             <h2 className="font-serif text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl">
-              Inicia sesión
+              {esRegistro ? 'Crea tu cuenta' : 'Inicia sesión'}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-stone-500">
-              Usa tu correo para pedir tu almuerzo y consultar tu cuenta.
+              {esRegistro
+                ? 'Registra tu número de WhatsApp para recibir el aviso de tu cuenta y tus pedidos.'
+                : 'Usa tu correo para pedir tu almuerzo y consultar tu cuenta.'}
             </p>
 
             {error && (
@@ -159,57 +219,168 @@ export default function Login() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
-                <label htmlFor="login-email">Correo electrónico</label>
-                <Input
-                  id="login-email"
-                  placeholder="juan@ejemplo.com"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  leftIcon={<Mail className="h-4 w-4" />}
-                />
+            {success && (
+              <div
+                className="mt-5 flex items-start gap-2.5 rounded-2xl border border-leaf-200 bg-leaf-50 p-3.5 text-sm text-leaf-800"
+                role="status"
+              >
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                <span className="min-w-0 break-words">{success}</span>
               </div>
-              <div>
-                <label htmlFor="login-password">Contraseña</label>
-                <Input
-                  id="login-password"
-                  placeholder="••••••••"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  leftIcon={<Lock className="h-4 w-4" />}
-                />
-              </div>
-              <Button type="submit" variant="leaf" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Iniciando sesión...
-                  </>
-                ) : (
-                  <>
-                    Iniciar sesión
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </form>
+            )}
+
+            {esRegistro ? (
+              <form onSubmit={handleRegistro} className="mt-6 space-y-4">
+                <div>
+                  <label htmlFor="reg-nombre">Nombre completo</label>
+                  <Input
+                    id="reg-nombre"
+                    placeholder="Juan Pérez"
+                    autoComplete="name"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    required
+                    leftIcon={<UserRound className="h-4 w-4" />}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="reg-email">Correo electrónico</label>
+                  <Input
+                    id="reg-email"
+                    placeholder="juan@ejemplo.com"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    leftIcon={<Mail className="h-4 w-4" />}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="reg-telefono">Número de WhatsApp</label>
+                  <Input
+                    id="reg-telefono"
+                    placeholder="8888 7777"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    required
+                    leftIcon={<Phone className="h-4 w-4" />}
+                  />
+                  <p className="mt-1.5 text-[11px] text-stone-400">
+                    Puedes escribir 8888 7777 o +505 8888 7777. Aquí recibirás los
+                    recordatorios de tu cuenta.
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="reg-password">Contraseña</label>
+                  <Input
+                    id="reg-password"
+                    placeholder="Mínimo 6 caracteres"
+                    type="password"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    leftIcon={<Lock className="h-4 w-4" />}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="reg-confirm">Confirmar contraseña</label>
+                  <Input
+                    id="reg-confirm"
+                    placeholder="Repite tu contraseña"
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    leftIcon={<Lock className="h-4 w-4" />}
+                  />
+                </div>
+                <Button type="submit" variant="leaf" size="lg" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creando cuenta...
+                    </>
+                  ) : (
+                    <>
+                      Crear cuenta
+                      <UserPlus className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <div>
+                  <label htmlFor="login-email">Correo electrónico</label>
+                  <Input
+                    id="login-email"
+                    placeholder="juan@ejemplo.com"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    leftIcon={<Mail className="h-4 w-4" />}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="login-password">Contraseña</label>
+                  <Input
+                    id="login-password"
+                    placeholder="••••••••"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    leftIcon={<Lock className="h-4 w-4" />}
+                  />
+                </div>
+                <Button type="submit" variant="leaf" size="lg" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Iniciando sesión...
+                    </>
+                  ) : (
+                    <>
+                      Iniciar sesión
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
 
             <div className="mt-6 border-t border-stone-200/80 pt-5 text-center text-sm text-stone-500">
-              <p>¿No tienes cuenta?</p>
-              <button
-                type="button"
-                onClick={() => navigate('/login?register=true')}
-                className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-leaf-700 transition-colors hover:bg-leaf-50 hover:text-leaf-900"
-              >
-                <UserPlus className="h-3.5 w-3.5" /> Crear cuenta
-              </button>
+              {esRegistro ? (
+                <button
+                  type="button"
+                  onClick={() => cambiarModo(false)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-leaf-700 transition-colors hover:bg-leaf-50 hover:text-leaf-900"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Ya tengo cuenta
+                </button>
+              ) : (
+                <>
+                  <p>¿No tienes cuenta?</p>
+                  <button
+                    type="button"
+                    onClick={() => cambiarModo(true)}
+                    className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-leaf-700 transition-colors hover:bg-leaf-50 hover:text-leaf-900"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" /> Crear cuenta
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

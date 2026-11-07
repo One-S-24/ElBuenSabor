@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { getCuentaActual, getHistorialCuentas } from '../services/accountService'
 import { getPedidosEnRango } from '../services/adminService'
+import { actualizarTelefono } from '../services/authService'
 import { formatCurrency } from '../lib/utils'
 import { formatearFechaHoraManagua, formatearFechaISO } from '../lib/date'
-import { ChevronRight, Clock, History, Mail, Phone, Wallet } from 'lucide-react'
+import { Check, ChevronRight, Clock, History, Loader2, Mail, Pencil, Phone, Wallet, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import Badge from '../components/ui/badge'
 import Avatar from '../components/ui/avatar'
+import Button from '../components/ui/button'
+import Input from '../components/ui/input'
 import { Skeleton, SkeletonText } from '../components/ui/skeleton'
 import { cn } from '../lib/utils'
 
@@ -24,7 +27,7 @@ const estadoTexto: Record<string, string> = {
 }
 
 export default function MiCuenta() {
-  const { profile, user } = useAuthStore()
+  const { profile, user, fetchProfile } = useAuthStore()
   const clienteId = profile?.id
   const [cuenta, setCuenta] = useState<any>(null)
   const [detalle, setDetalle] = useState<any[]>([])
@@ -32,6 +35,38 @@ export default function MiCuenta() {
   const [selectedPeriodo, setSelectedPeriodo] = useState<string | null>(null)
   const [periodoDetalle, setPeriodoDetalle] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [editandoTelefono, setEditandoTelefono] = useState(false)
+  const [telefonoInput, setTelefonoInput] = useState('')
+  const [guardandoTelefono, setGuardandoTelefono] = useState(false)
+  const [errorTelefono, setErrorTelefono] = useState('')
+
+  const abrirEdicionTelefono = () => {
+    setTelefonoInput(profile?.telefono_whatsapp ?? '')
+    setErrorTelefono('')
+    setEditandoTelefono(true)
+  }
+
+  const cancelarEdicionTelefono = () => {
+    setEditandoTelefono(false)
+    setErrorTelefono('')
+  }
+
+  const guardarTelefono = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorTelefono('')
+    setGuardandoTelefono(true)
+    try {
+      const telefono = await actualizarTelefono(telefonoInput)
+      await fetchProfile()
+      setTelefonoInput(telefono)
+      setEditandoTelefono(false)
+    } catch (err: any) {
+      setErrorTelefono(err.message || 'No se pudo actualizar el teléfono')
+    } finally {
+      setGuardandoTelefono(false)
+    }
+  }
 
   useEffect(() => {
     let mounted = true
@@ -161,12 +196,67 @@ export default function MiCuenta() {
                 {profile?.nombre ?? 'Cliente'}
               </p>
               <div className="mt-1.5 space-y-1">
-                <p className="flex min-w-0 items-center gap-1.5 text-xs text-stone-500">
-                  <Phone className="h-3.5 w-3.5 shrink-0 text-leaf-600" />
-                  <span className="truncate">
-                    {profile?.telefono_whatsapp || 'Sin teléfono registrado'}
-                  </span>
-                </p>
+                {editandoTelefono ? (
+                  <form onSubmit={guardarTelefono} className="space-y-2">
+                    <label htmlFor="perfil-telefono" className="sr-only">
+                      Número de WhatsApp
+                    </label>
+                    <Input
+                      id="perfil-telefono"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="8888 7777"
+                      value={telefonoInput}
+                      onChange={(e) => setTelefonoInput(e.target.value)}
+                      required
+                      leftIcon={<Phone className="h-4 w-4" />}
+                      className="h-10 text-xs"
+                    />
+                    <p className="text-[11px] text-stone-400">
+                      Puedes escribir 8888 7777 o +505 8888 7777.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button type="submit" size="sm" disabled={guardandoTelefono}>
+                        {guardandoTelefono ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
+                        Guardar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={cancelarEdicionTelefono}
+                        disabled={guardandoTelefono}
+                      >
+                        <X className="h-3.5 w-3.5" /> Cancelar
+                      </Button>
+                    </div>
+                    {errorTelefono && (
+                      <p className="break-words text-[11px] font-medium text-ember-700" role="alert">
+                        {errorTelefono}
+                      </p>
+                    )}
+                  </form>
+                ) : (
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 shrink-0 text-leaf-600" />
+                    <span className="truncate text-xs text-stone-500">
+                      {profile?.telefono_whatsapp || 'Sin teléfono registrado'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={abrirEdicionTelefono}
+                      className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-leaf-700 transition-colors hover:bg-leaf-50 hover:text-leaf-900"
+                      aria-label="Editar número de WhatsApp"
+                    >
+                      <Pencil className="h-3 w-3" /> Editar
+                    </button>
+                  </div>
+                )}
                 {user?.email && (
                   <p className="flex min-w-0 items-center gap-1.5 text-xs text-stone-500">
                     <Mail className="h-3.5 w-3.5 shrink-0 text-leaf-600" />

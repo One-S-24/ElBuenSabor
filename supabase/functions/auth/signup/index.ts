@@ -37,15 +37,21 @@ serve(async (req) => {
       )
     }
 
+    // El trigger `on_auth_user_created` normalmente ya creó el perfil.
+    // Usamos upsert con ignoreDuplicates para que este endpoint siga siendo
+    // idempotente en proyectos donde el trigger no esté instalado.
     const { error: profileError } = await supabase
       .from('perfiles')
-      .insert({
-        id: authData.user.id,
-        nombre,
-        telefono_whatsapp,
-        rol,
-        limite_credito: 2000.00,
-      })
+      .upsert(
+        {
+          id: authData.user.id,
+          nombre,
+          telefono_whatsapp,
+          rol,
+          limite_credito: 2000.00,
+        },
+        { onConflict: 'id', ignoreDuplicates: true }
+      )
 
     if (profileError) {
       await supabase.auth.admin.deleteUser(authData.user.id)
