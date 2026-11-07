@@ -1,0 +1,117 @@
+name: CI/CD Docker -> GHCR -> Render
+
+on:
+  push:
+    branches: [main, DOCKERCICD]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # docker/metadata-action normaliza este valor a minúsculas:
+  # One-S-24/ElBuenSabor -> ghcr.io/one-s-24/elbuensabor
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ---------- CI: construir, probar y publicar la imagen ----------
+  build-test-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 1. Descargar el código
+        uses: actions/checkout@v4
+
+      - name: 1.5 Validar secrets de Supabase
+        if: github.event_name != 'pull_request'
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Faltan los secrets VITE_SUPABASE_URL y/o VITE_SUPABASE_ANON_KEY"
+            exit 1
+          fi
+          case "$SUPABASE_URL" in
+            http://127.0.0.1*|http://localhost*)
+              echo "::error::VITE_SUPABASE_URL apunta a localhost. Usa la URL de Supabase Cloud."
+              exit 1
+              ;;
+          esac
+
+      - name: 2. Construir la imagen
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          docker build \
+            --build-arg "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" \
+            --build-arg "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" \
+            -t buen-sabor:test .
+
+      - name: 3. Prueba sencilla (smoke test)
+        run: |
+          docker rm -f app 2>/dev/null || true
+          docker run -d --name app -p 8080:80 buen-sabor:test
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:8080 | grep -q "El Buen Sabor"; then
+              echo "✅ La app responde y contiene 'El Buen Sabor'"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::La app no respondió con 'El Buen Sabor' en 15s"
+          exit 1
+
+      - name: 4. Logs del contenedor (solo si falló)
+        if: failure()
+        run: docker logs app || true
+
+      - name: 5. Login en GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 6. Calcular tags (latest + sha)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: 7. Publicar la imagen en GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+  # ---------- CD: redesplegar en Render ----------
+  deploy-render:
+    needs: build-test-push
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Redesplegar el servicio (Render descarga la nueva imagen :latest)
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Falta el secret RENDER_DEPLOY_HOOK_URL"
+            exit 1
+          fi
+          curl -sf -X POST "$RENDER_DEPLOY_HOOK_URL"
