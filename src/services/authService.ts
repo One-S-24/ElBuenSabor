@@ -32,30 +32,16 @@ export interface RegistroPayload {
 
 export interface RegistroResultado {
   user: User
-  requiereConfirmacion: boolean
-}
-
-function traducirErrorAuth(mensaje: string): string {
-  const texto = mensaje.toLowerCase()
-
-  if (texto.includes('already registered') || texto.includes('already been registered')) {
-    return 'Ese correo ya tiene una cuenta. Inicia sesión o usa otro correo.'
-  }
-  if (texto.includes('password should be at least')) {
-    return 'La contraseña debe tener al menos 6 caracteres.'
-  }
-  if (texto.includes('unable to validate email') || texto.includes('invalid email')) {
-    return 'El correo electrónico no es válido.'
-  }
-  if (texto.includes('signups not allowed')) {
-    return 'El registro está deshabilitado. Contacta al administrador.'
-  }
-
-  return mensaje
 }
 
 /**
  * Crea la cuenta en Supabase Auth y su perfil en `perfiles`.
+ *
+ * El proyecto tiene `enable_confirmations = false`, por lo que
+ * `signUp` devuelve una sesión activa inmediatamente sin requerir
+ * que el usuario confirme su correo. El trigger
+ * `on_auth_user_created` (migración 20261107000001) crea el perfil
+ * automáticamente desde los metadatos insertados en el sign‑up.
  *
  * El teléfono se guarda tanto en los metadatos del usuario como en el perfil,
  * porque de ahí lo toma la Edge Function de WhatsApp para enviar recordatorios.
@@ -85,30 +71,14 @@ export async function registrarCliente(payload: RegistroPayload): Promise<Regist
     },
   })
 
-  if (error) throw new Error(traducirErrorAuth(error.message))
+  if (error) throw new Error('No se pudo crear la cuenta. Inténtalo de nuevo.')
   if (!data.user) throw new Error('No se pudo crear la cuenta. Inténtalo de nuevo.')
 
-  // Con la confirmación de correo desactivada, Supabase devuelve una sesión.
-  // La usamos para crear el perfil (la política RLS permite auth.uid() = id).
-  if (data.session) {
-    const { error: perfilError } = await supabase.from('perfiles').upsert(
-      {
-        id: data.user.id,
-        nombre,
-        telefono_whatsapp: telefono,
-        rol: 'cliente',
-      },
-      { onConflict: 'id', ignoreDuplicates: true },
-    )
-
-    if (perfilError) {
-      throw new Error(`No se pudo crear el perfil: ${perfilError.message}`)
-    }
-  }
-
+  // Con enable_confirmations = false, data.session siempre está presente
+  // y el trigger on_auth_user_created ya creó el perfil. Solo devolvemos
+  // el usuario; el resto lo maneja el sistema automáticamente.
   return {
     user: data.user,
-    requiereConfirmacion: !data.session,
   }
 }
 

@@ -87,26 +87,17 @@ export default function Login() {
 
     setIsLoading(true)
     try {
-      const { user, requiereConfirmacion } = await registrarCliente({
+      const { user } = await registrarCliente({
         nombre,
         email,
         password,
         telefono_whatsapp: telefono,
       })
 
-      if (requiereConfirmacion) {
-        setSuccess(
-          'Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesión.',
-        )
-        setPassword('')
-        setConfirmPassword('')
-        setSearchParams({})
-        return
-      }
-
       setUser(user)
       await fetchProfile()
       navigate('/', { replace: true })
+      setSuccess('Cuenta creada. ¡Bienvenido!')
     } catch (err: any) {
       setError(err.message || 'No se pudo crear la cuenta')
     } finally {
