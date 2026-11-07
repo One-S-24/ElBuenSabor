@@ -10,7 +10,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(({ className, variant =
     default: 'surface rounded-2xl',
     bordered: 'rounded-none border-b border-stone-200 bg-white shadow-none',
     raised: 'surface rounded-3xl shadow-[var(--shadow-lift)]',
-    ink: 'ink-surface rounded-3xl',
+    ink: 'ink-surface rounded-2xl',
   }
   return <div ref={ref} className={cn(variants[variant], className)} {...props} />
 })
