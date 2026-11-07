@@ -48,8 +48,12 @@ services:
       SERVE_DASHBOARD: "true"
       ENABLE_SWAGGER: "true"
 
-      # Protección de envíos (el panel también aplica pausas)
+      # Protección de envíos (el panel también aplica pausas).
+      # El calendario por edad de la sesión se sube respecto al default de OpenWA
+      # (20,40,80,...) porque 80 mensajes/día es muy bajo para el comedor.
       SEND_PACING_ENABLED: "true"
+      SEND_PACING_WARMUP_SCHEDULE: "200,400,800,1600,3200,6400,10000"
+      SEND_PACING_COLD_DAILY_CAP: "50,100,200,400,600,800,1000"
     volumes:
       - openwa-data:/app/data
     security_opt:

@@ -98,6 +98,82 @@ supabase secrets set \
 Si existe una fila activa en `whatsapp_config`, esa tiene prioridad. Si no,
 la Edge Function usa las variables `OPENWA_*`.
 
+### Producción: exponer OpenWA con HTTPS
+
+Supabase Cloud **no puede** alcanzar `http://host.docker.internal:2785` ni
+`http://localhost:2785`: esas direcciones solo existen en tu PC. La Edge
+Function corre en los servidores de Supabase, así que `api_url` debe ser una
+URL pública con HTTPS.
+
+La forma más rápida (gratis) es un **Quick Tunnel de Cloudflare**:
+
+```bash
+# 1. OpenWA local encendido
+npm run openwa:up
+
+# 2. Crear el túnel y actualizar whatsapp_config en Supabase
+npm run openwa:tunnel
+```
+
+El script:
+
+1. descarga `cloudflared` si no existe;
+2. comprueba que OpenWA responde en `localhost:2785`;
+3. crea una URL `https://<aleatoria>.trycloudflare.com`;
+4. actualiza `public.whatsapp_config.api_url` en Supabase Cloud usando el CLI.
+
+Si no puede actualizar Supabase, copia la URL que imprime y pégala en
+**URL base** dentro de `/admin/whatsapp` (agregando `/api`).
+
+Requisitos y limitaciones:
+
+- Tu PC y Docker Desktop deben estar encendidos mientras se usen los envíos.
+- La URL de un Quick Tunnel **cambia** cada vez que lo reinicias. Vuelve a
+  ejecutar `npm run openwa:tunnel` y la configuración se actualiza sola.
+- El túnel expone la API y el dashboard de OpenWA. Ambos exigen `X-API-Key`
+  (la dashboard la pide al entrar), pero no compartas la URL.
+- Para una URL fija necesitas un **Named Tunnel** con un dominio en Cloudflare
+  (`cloudflared tunnel login`, `cloudflared tunnel create`, DNS + servicio de
+  Windows). En ese caso `api_url` sería, por ejemplo,
+  `https://openwa.tudominio.com/api`.
+
+Para que el túnel arranque solo al iniciar sesión en Windows:
+
+```powershell
+$script = (Resolve-Path .\scripts\openwa-tunnel.ps1).Path
+schtasks /Create /TN "OpenWA Tunnel" /SC ONLOGON /RL LIMITED `
+  /TR "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`"" /F
+```
+
+Docker Desktop también debe arrancar al iniciar sesión. Para quitar la tarea:
+
+```powershell
+schtasks /Delete /TN "OpenWA Tunnel" /F
+```
+
+#### Límite diario de envíos (429)
+
+OpenWA trae un control anti-ban activado. Si se alcanza el cupo del día, la
+API responde `429` con `code: SEND_PACING_LIMITED` y el panel muestra
+*"OpenWA limitó el envío..."*. Los cupos se configuran en
+`docker-compose.openwa.yml`:
+
+```yaml
+SEND_PACING_ENABLED: "true"
+SEND_PACING_WARMUP_SCHEDULE: "200,400,800,1600,3200,6400,10000"
+SEND_PACING_COLD_DAILY_CAP: "50,100,200,400,600,800,1000"
+```
+
+Cada valor es el cupo por día de antigüedad de la sesión; el último se repite
+para siempre. Para aplicar cambios:
+
+```bash
+docker compose -f docker-compose.openwa.yml up -d
+```
+
+La sesión de WhatsApp se conserva en el volumen `openwa-data` y se reconecta
+sola (`AUTO_START_SESSIONS=true`), sin volver a escanear el QR.
+
 ## 4. Enviar notificaciones
 
 - **Cobranza quincenal** (`/admin/cobranza`): el botón *Enviar WA* de cada
@@ -166,11 +242,11 @@ En macOS/Linux el comando de copia es `cp`.
 
 | Síntoma | Causa probable | Solución |
 | ------- | -------------- | -------- |
-| `OpenWA no está disponible` | Contenedor apagado o URL incorrecta | `npm run openwa:up`; revisa `OPENWA_BASE_URL` |
+| `OpenWA no está disponible` | Contenedor apagado, túnel caído o URL incorrecta | `npm run openwa:up`; en producción `npm run openwa:tunnel` |
+| `OpenWA limitó el envío` (429) | Cupo diario anti-ban alcanzado | Espera al siguiente día o sube `SEND_PACING_WARMUP_SCHEDULE` |
 | `La sesión no está conectada` (409) | QR no escaneado o sesión caída | Abre `/admin/whatsapp` y reconecta |
 | `API key inválida` (401) | Clave incorrecta o revocada | Vuelve a copiar `npm run openwa:key` |
 | `La sesión no existe` (404) | `session_id` distinto | Usa el mismo nombre o pulsa Conectar |
-| `OpenWA limitó el envío` (429) | Pacing activo | Espera y sube `delay_ms` |
 
 ## 8. Advertencias
 

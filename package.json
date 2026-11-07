@@ -11,7 +11,8 @@
     "openwa:up": "docker compose -f docker-compose.openwa.yml up -d",
     "openwa:down": "docker compose -f docker-compose.openwa.yml down",
     "openwa:key": "docker exec openwa-api cat /app/data/.api-key",
-    "openwa:logs": "docker logs -f openwa-api"
+    "openwa:logs": "docker logs -f openwa-api",
+    "openwa:tunnel": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Start-Process -FilePath powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','scripts/openwa-tunnel.ps1' -WindowStyle Hidden\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
